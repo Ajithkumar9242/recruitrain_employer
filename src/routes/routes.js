@@ -1,0 +1,17 @@
+export const ROUTES = {
+  FOUNDATION: '/foundation-demo',
+  LOGIN: '/login',
+  FORGOT_PASSWORD: '/forgot-password',
+  RESET_PASSWORD: '/reset-password',
+  APP: '/app',
+  DASHBOARD: '/app/dashboard',
+  JOBS: '/app/jobs',
+  CANDIDATES: '/app/candidates',
+  APPLICATIONS: '/app/applications',
+  INTERVIEWS: '/app/interviews',
+  OFFERS: '/app/offers',
+  TALENT_POOLS: '/app/talent-pools',
+  ANALYTICS: '/app/analytics',
+  BILLING: '/app/billing',
+  SETTINGS: '/app/settings',
+};

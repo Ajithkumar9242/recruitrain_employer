@@ -1,0 +1,110 @@
+/* Dashboard Components Stylesheet */
+
+.dashboard-kpi-card {
+  height: 100%;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border-color);
+  background-color: var(--bg-surface);
+  transition: transform var(--transition-fast), box-shadow var(--transition-fast);
+}
+
+.dashboard-kpi-card:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-subtle);
+}
+
+.kpi-card-inner {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.kpi-card-content {
+  flex: 1;
+}
+
+.kpi-card-label {
+  font-size: 0.8125rem;
+  font-weight: 500;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  display: block;
+  margin-bottom: 0.25rem;
+}
+
+.kpi-card-value-row {
+  display: flex;
+  align-items: baseline;
+  gap: 0.5rem;
+}
+
+.kpi-card-value {
+  margin: 0 !important;
+  font-size: 1.75rem !important;
+  font-weight: 700 !important;
+  color: var(--text-main) !important;
+  font-family: var(--font-family-heading);
+}
+
+.kpi-card-trend {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  padding: 2px 6px;
+  border-radius: 4px;
+}
+
+.kpi-card-trend.positive {
+  color: #10B981;
+  background-color: rgba(16, 185, 129, 0.1);
+}
+
+.kpi-card-trend.negative {
+  color: #EF4444;
+  background-color: rgba(239, 68, 68, 0.1);
+}
+
+.kpi-card-icon-wrapper {
+  width: 44px;
+  height: 44px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+/* SECTION CARDS */
+.dashboard-section-card {
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border-color);
+  background-color: var(--bg-surface);
+  margin-bottom: 1.5rem;
+}
+
+.dashboard-section-card .ant-card-head {
+  border-bottom: 1px solid var(--border-subtle);
+  padding: 0 1.25rem;
+  min-height: 48px;
+}
+
+.dashboard-section-card .ant-card-head-title {
+  font-size: 0.9375rem;
+  font-weight: 600;
+  color: var(--text-main);
+}
+
+/* FUNNEL */
+.funnel-container {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.funnel-stage-row {
+  padding: 0.375rem 0;
+}
