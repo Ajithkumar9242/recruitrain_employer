@@ -739,12 +739,12 @@
       "Cancelled": "Cancelled"
     },
     "types": {
-      "Phone": "Phone Screening",
-      "Video": "Video Interview",
-      "Technical": "Technical Assessment",
-      "HR": "HR Round",
-      "Managerial": "Managerial Round",
-      "Final": "Final Discussion"
+      "Phone": "Phone",
+      "Video": "Video",
+      "Technical": "Technical",
+      "HR": "HR",
+      "Managerial": "Managerial",
+      "Final": "Final"
     },
     "actions": {
       "viewDetails": "View Details",

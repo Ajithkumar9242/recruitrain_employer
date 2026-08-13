@@ -34,6 +34,7 @@ import { useLanguage } from '../../../hooks/useLanguage';
 import { useInterviews } from '../../../hooks/useInterviews';
 import { InterviewDetailsDrawer, getInterviewStatusTagColor, getInterviewTypeTagColor } from './InterviewDetailsDrawer';
 import { InterviewFormModal } from './InterviewFormModal';
+import { INTERVIEW_TYPES } from '../../../constants/interviewConstants';
 
 import candidateApi from '../../../services/candidateApi';
 import jobApi from '../../../services/jobApi';
@@ -302,9 +303,15 @@ export const InterviewsPage = () => {
           message.success(t('interviews.messages.updateSuccess'));
           setModalOpen(false);
           setEditingInterview(null);
+          if (selectedInterviewId) {
+            getInterviewDetails(selectedInterviewId);
+          }
           break;
         case 'status_success':
           message.success(t('interviews.messages.statusSuccess'));
+          if (selectedInterviewId) {
+            getInterviewDetails(selectedInterviewId);
+          }
           break;
         case 'delete_success':
           message.success(t('interviews.messages.deleteSuccess'));
@@ -315,7 +322,7 @@ export const InterviewsPage = () => {
       }
       clearActionStatus();
     }
-  }, [actionStatus, clearActionStatus, t]);
+  }, [actionStatus, clearActionStatus, t, selectedInterviewId, getInterviewDetails]);
 
   // Handle error notifications
   useEffect(() => {
@@ -789,6 +796,7 @@ export const InterviewsPage = () => {
         visible={modalOpen}
         interview={editingInterview}
         saving={saving}
+        error={error}
         onClose={() => {
           setModalOpen(false);
           setEditingInterview(null);

@@ -12,11 +12,14 @@ import {
   Card,
   Space,
   Typography,
+  Tag,
+  Alert,
 } from 'antd';
 import dayjs from 'dayjs';
 import { useLanguage } from '../../../hooks/useLanguage';
 import jobApplicationApi from '../../../services/jobApplicationApi';
 import jobApi from '../../../services/jobApi';
+import { INTERVIEW_TYPES, INTERVIEW_ELIGIBLE_STAGES } from '../../../constants/interviewConstants';
 
 const { Option } = Select;
 const { TextArea } = Input;
@@ -26,6 +29,7 @@ export const InterviewFormModal = ({
   visible,
   interview = null,
   saving,
+  error = null,
   onClose,
   onSubmit,
 }) => {
@@ -39,7 +43,7 @@ export const InterviewFormModal = ({
 
   const selectedAppId = Form.useWatch('job_application', form);
   const selectedApp = jobApplications.find(
-    (a) => (a.id || a.name || a.applicationId) === selectedAppId
+    (a) => String(a.id || a.name || a.applicationId) === String(selectedAppId)
   );
 
   const loadMasters = useCallback(async () => {
@@ -107,6 +111,18 @@ export const InterviewFormModal = ({
     onSubmit(payload);
   };
 
+  // Filter job applications by eligibility rule:
+  // In Create mode, only applications whose current_stage is in INTERVIEW_ELIGIBLE_STAGES are selectable.
+  // In Edit mode, preserve linked application for historical view.
+  const selectableApps = jobApplications.filter((app) => {
+    const appId = String(app.id || app.name || app.applicationId || '');
+    if (isEditing && interview && String(interview.jobApplication || interview.job_application) === appId) {
+      return true;
+    }
+    const stage = app.currentStage || app.stage || app.status;
+    return INTERVIEW_ELIGIBLE_STAGES.includes(stage);
+  });
+
   return (
     <Modal
       open={visible}
@@ -120,6 +136,14 @@ export const InterviewFormModal = ({
       width={680}
     >
       <Spin spinning={loadingMasters}>
+        {error && (
+          <Alert
+            type="error"
+            message={typeof error === 'string' ? error : error?.message || 'Failed to process interview'}
+            showIcon
+            style={{ marginBottom: 16 }}
+          />
+        )}
         <Form
           form={form}
           layout="vertical"
@@ -143,10 +167,14 @@ export const InterviewFormModal = ({
                   placeholder="Select Job Application"
                   disabled={isEditing}
                   optionFilterProp="children"
+                  notFoundContent="No interview-eligible job applications found (Stage must be 'Interview')"
                 >
-                  {jobApplications.map((app) => {
+                  {selectableApps.map((app) => {
                     const appId = app.id || app.name || app.applicationId;
-                    const label = `${appId} — ${app.candidateName || app.candidate || 'Candidate'} (${app.jobOpeningTitle || app.jobOpening || 'Job'})`;
+                    const candName = app.candidateName || app.candidate || 'Candidate';
+                    const jobTitle = app.jobOpeningTitle || app.jobTitle || app.jobOpening || 'Job';
+                    const stage = app.currentStage || app.stage || 'Interview';
+                    const label = `#${appId} — ${candName} — ${jobTitle} — ${stage}`;
                     return (
                       <Option key={appId} value={appId}>
                         {label}
@@ -204,12 +232,11 @@ export const InterviewFormModal = ({
                 rules={[{ required: true, message: t('interviews.form.interviewTypeRequired', 'Please select interview type') }]}
               >
                 <Select>
-                  <Option value="Phone">{t('interviews.types.Phone', 'Phone')}</Option>
-                  <Option value="Video">{t('interviews.types.Video', 'Video')}</Option>
-                  <Option value="Technical">{t('interviews.types.Technical', 'Technical')}</Option>
-                  <Option value="HR">{t('interviews.types.HR', 'HR')}</Option>
-                  <Option value="Managerial">{t('interviews.types.Managerial', 'Managerial')}</Option>
-                  <Option value="Final">{t('interviews.types.Final', 'Final')}</Option>
+                  {INTERVIEW_TYPES.map((type) => (
+                    <Option key={type} value={type}>
+                      {t(`interviews.types.${type}`, type)}
+                    </Option>
+                  ))}
                 </Select>
               </Form.Item>
             </Col>
@@ -248,6 +275,7 @@ export const InterviewFormModal = ({
               <Form.Item
                 name="interviewer"
                 label={t('interviews.form.interviewerLabel', 'Interviewer')}
+                rules={[{ required: true, message: t('interviews.form.interviewerRequired', 'Please select an interviewer') }]}
               >
                 <Select
                   showSearch

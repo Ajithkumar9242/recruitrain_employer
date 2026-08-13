@@ -104,8 +104,6 @@ export const interviewApi = {
     const payload = {
       job_application: data.jobApplication || data.job_application,
       interview_type: data.interviewType || data.interview_type,
-      candidate: data.candidate,
-      job_opening: data.jobOpening || data.job_opening,
       scheduled_on: data.scheduledOn || data.scheduled_on,
       duration: data.duration !== undefined && data.duration !== null ? Number(data.duration) : undefined,
       meeting_link: data.meetingLink || data.meeting_link,
