@@ -159,3 +159,6 @@ export const normalizeApiError = (error) => {
       };
   }
 };
+
+export const formatApiError = normalizeApiError;
+export default normalizeApiError;

@@ -20,6 +20,7 @@ import InterviewsPage from '../pages/app/Interviews/InterviewsPage';
 import OffersPage from '../pages/app/Offers/OffersPage';
 import NotificationsPage from '../pages/app/Notifications/NotificationsPage';
 import AnalyticsPage from '../pages/app/Analytics/AnalyticsPage';
+import CompanySettingsPage from '../pages/app/CompanySettings/CompanySettingsPage';
 import ModulePlaceholder from '../components/common/ModulePlaceholder';
 import FoundationDemo from '../components/foundation/FoundationDemo';
 
@@ -90,10 +91,8 @@ export const AppRouter = () => {
               path={ROUTES.BILLING}
               element={<ModulePlaceholder moduleNameKey="nav.billing" moduleNameFallback="Billing" />}
             />
-            <Route
-              path={ROUTES.SETTINGS}
-              element={<ModulePlaceholder moduleNameKey="nav.settings" moduleNameFallback="Settings" />}
-            />
+            <Route path={ROUTES.SETTINGS} element={<CompanySettingsPage />} />
+            <Route path={ROUTES.COMPANY_SETTINGS} element={<CompanySettingsPage />} />
           </Route>
 
           {/* Foundation Inspector (Phase 1 Demo) */}

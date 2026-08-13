@@ -16,4 +16,5 @@ export const ROUTES = {
   ANALYTICS: '/app/analytics',
   BILLING: '/app/billing',
   SETTINGS: '/app/settings',
+  COMPANY_SETTINGS: '/app/company-settings',
 };

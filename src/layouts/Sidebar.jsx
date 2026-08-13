@@ -140,7 +140,7 @@ export const Sidebar = ({ isMobileDrawer = false, onItemClick }) => {
             onClick={onItemClick}
           />
           <NavItem
-            to={ROUTES.SETTINGS}
+            to={ROUTES.COMPANY_SETTINGS}
             labelKey="nav.settings"
             icon={FiSettings}
             isCollapsed={collapsed}
