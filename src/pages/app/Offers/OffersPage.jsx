@@ -29,6 +29,7 @@ import { useLanguage } from '../../../hooks/useLanguage';
 import { useOffers } from '../../../hooks/useOffers';
 import { OfferDetailsDrawer, getOfferStatusTagColor } from './OfferDetailsDrawer';
 import { OfferFormModal } from './OfferFormModal';
+import { getOfferId } from '../../../utils/offerNormalizer';
 
 const { Title, Text } = Typography;
 const { Option } = Select;
@@ -51,7 +52,6 @@ export const OffersPage = () => {
     getOfferDetails,
     createOffer,
     updateOffer,
-    changeStatus,
     sendOffer,
     acceptOffer,
     rejectOffer,
@@ -62,13 +62,13 @@ export const OffersPage = () => {
     resetFilters,
     setPage,
     setPageSize,
-    setSelectedOffer,
     clearSelectedOffer,
     clearError,
     clearActionStatus,
   } = useOffers();
 
   const [drawerOpen, setDrawerOpen] = useState(false);
+  const [selectedOfferId, setSelectedOfferId] = useState(null);
   const [modalOpen, setModalOpen] = useState(false);
   const [editingOffer, setEditingOffer] = useState(null);
   const [searchInput, setSearchInput] = useState(search);
@@ -111,7 +111,7 @@ export const OffersPage = () => {
           break;
         case 'delete_success':
           message.success(t('offers.messages.deleteSuccess', 'Offer deleted successfully.'));
-          setDrawerOpen(false);
+          handleCloseDrawer();
           break;
         default:
           break;
@@ -189,11 +189,23 @@ export const OffersPage = () => {
     loadOffers({ page: newPagination.current, pageSize: newPagination.pageSize });
   };
 
-  // Action Handlers
-  const handleViewDetails = (record) => {
-    setSelectedOffer(record);
-    getOfferDetails(record.id || record.name);
+  // View Details Authoritative Action Handler
+  const handleViewDetails = async (record) => {
+    const canonicalOfferId = getOfferId(record);
+    if (!canonicalOfferId) {
+      message.error(t('offers.messages.invalidOfferId', 'Invalid offer record or missing Offer ID.'));
+      return;
+    }
+    const cleanId = String(canonicalOfferId).trim();
+    setSelectedOfferId(cleanId);
     setDrawerOpen(true);
+    await getOfferDetails(cleanId);
+  };
+
+  const handleCloseDrawer = () => {
+    setDrawerOpen(false);
+    setSelectedOfferId(null);
+    clearSelectedOffer();
   };
 
   const handleOpenCreateModal = () => {
@@ -207,31 +219,37 @@ export const OffersPage = () => {
   };
 
   const handleFormSubmit = async (payload) => {
-    if (editingOffer?.id || editingOffer?.name) {
-      await updateOffer(editingOffer.id || editingOffer.name, payload);
+    const canonicalId = getOfferId(editingOffer);
+    if (canonicalId) {
+      await updateOffer(canonicalId, payload);
     } else {
       await createOffer(payload);
     }
   };
 
-  const handleSendOffer = async (offerId) => {
-    await sendOffer(offerId);
+  const handleSendOffer = async (id) => {
+    const cleanId = String(id || '').trim();
+    if (cleanId) await sendOffer(cleanId);
   };
 
-  const handleAcceptOffer = async (offerId) => {
-    await acceptOffer(offerId);
+  const handleAcceptOffer = async (id) => {
+    const cleanId = String(id || '').trim();
+    if (cleanId) await acceptOffer(cleanId);
   };
 
-  const handleRejectOffer = async (offerId) => {
-    await rejectOffer(offerId);
+  const handleRejectOffer = async (id) => {
+    const cleanId = String(id || '').trim();
+    if (cleanId) await rejectOffer(cleanId);
   };
 
-  const handleWithdrawOffer = async (offerId) => {
-    await withdrawOffer(offerId);
+  const handleWithdrawOffer = async (id) => {
+    const cleanId = String(id || '').trim();
+    if (cleanId) await withdrawOffer(cleanId);
   };
 
-  const handleDeleteOffer = async (offerId) => {
-    await deleteOffer(offerId);
+  const handleDeleteOffer = async (id) => {
+    const cleanId = String(id || '').trim();
+    if (cleanId) await deleteOffer(cleanId);
   };
 
   const columns = [
@@ -240,15 +258,21 @@ export const OffersPage = () => {
       dataIndex: 'name',
       key: 'name',
       width: 140,
-      render: (text, record) => (
-        <Button
-          type="link"
-          onClick={() => handleViewDetails(record)}
-          style={{ padding: 0, fontWeight: 600, color: 'var(--brand-teal, #1890ff)' }}
-        >
-          {text || record.id}
-        </Button>
-      ),
+      render: (text, record) => {
+        const displayId = getOfferId(record) || text || record.id;
+        return (
+          <Button
+            type="link"
+            onClick={(e) => {
+              e.stopPropagation();
+              handleViewDetails(record);
+            }}
+            style={{ padding: 0, fontWeight: 600, color: 'var(--brand-teal, #1890ff)' }}
+          >
+            {displayId}
+          </Button>
+        );
+      },
     },
     {
       title: t('offers.table.candidate', 'Candidate'),
@@ -318,10 +342,10 @@ export const OffersPage = () => {
       fixed: 'right',
       render: (_, record) => {
         const status = record.offerStatus || record.status;
-        const offerId = record.id || record.name;
+        const offerId = getOfferId(record);
 
         return (
-          <Space size="small">
+          <Space size="small" onClick={(e) => e.stopPropagation()}>
             <Tooltip title={t('offers.actions.viewDetails', 'View Details')}>
               <Button
                 type="text"
@@ -463,6 +487,20 @@ export const OffersPage = () => {
           dataSource={offers}
           rowKey="id"
           loading={loading}
+          onRow={(record) => ({
+            onClick: (e) => {
+              if (
+                e.target.closest('.ant-btn') ||
+                e.target.closest('.ant-popover') ||
+                e.target.closest('a') ||
+                e.target.closest('.ant-dropdown')
+              ) {
+                return;
+              }
+              handleViewDetails(record);
+            },
+            style: { cursor: 'pointer' },
+          })}
           pagination={{
             current: pagination.page,
             pageSize: pagination.pageSize,
@@ -481,21 +519,19 @@ export const OffersPage = () => {
 
       {/* Offer Details Drawer */}
       <OfferDetailsDrawer
-        visible={drawerOpen}
+        open={drawerOpen}
+        offerId={selectedOfferId}
         offer={selectedOffer}
         loading={loadingDetails}
         saving={saving}
         deleting={deleting}
-        onClose={() => {
-          setDrawerOpen(false);
-          clearSelectedOffer();
-        }}
+        onClose={handleCloseDrawer}
         onSend={handleSendOffer}
         onAccept={handleAcceptOffer}
         onReject={handleRejectOffer}
         onWithdraw={handleWithdrawOffer}
         onEdit={(record) => {
-          setDrawerOpen(false);
+          handleCloseDrawer();
           handleOpenEditModal(record);
         }}
         onDelete={handleDeleteOffer}

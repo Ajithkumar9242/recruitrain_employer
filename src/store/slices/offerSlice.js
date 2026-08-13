@@ -265,6 +265,8 @@ const offerSlice = createSlice({
       // fetchOfferDetails
       .addCase(fetchOfferDetails.pending, (state) => {
         state.loadingDetails = true;
+        state.selectedOffer = null;
+        state.error = null;
       })
       .addCase(fetchOfferDetails.fulfilled, (state, action) => {
         state.loadingDetails = false;
@@ -272,6 +274,7 @@ const offerSlice = createSlice({
       })
       .addCase(fetchOfferDetails.rejected, (state, action) => {
         state.loadingDetails = false;
+        state.selectedOffer = null;
         state.error = action.payload;
       })
 

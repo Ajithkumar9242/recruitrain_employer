@@ -24,16 +24,71 @@ export const cleanFrappeMetadata = (row) => {
 };
 
 /**
+ * Safely resolve the canonical Offer ID from a record or string
+ * @param {Object|string|number} record
+ * @returns {string} Canonical Offer primary key or empty string
+ */
+export const getOfferId = (record) => {
+  if (!record) return '';
+  if (typeof record === 'string') return record.trim();
+  if (typeof record === 'number') return String(record);
+  if (typeof record !== 'object') return '';
+
+  const candidates = [
+    record.name,
+    record.id,
+    record.offerId,
+    record.offer_name,
+  ];
+
+  for (const val of candidates) {
+    if (val && typeof val === 'string' && val.trim() !== '') {
+      return val.trim();
+    }
+    if (val && typeof val === 'number') {
+      return String(val);
+    }
+  }
+
+  return '';
+};
+
+/**
+ * Unwrap nested response envelopes cleanly
+ * Handles:
+ * raw.message.data, raw.data.data, raw.message, raw.data
+ * @param {Object} raw - Raw API response
+ * @returns {Object|null} Unwrapped object
+ */
+export const unwrapOfferData = (raw) => {
+  if (!raw || typeof raw !== 'object') return null;
+  let d = raw;
+  while (d && typeof d === 'object') {
+    if (d.name || d.id || d.offer_id || d.job_application) {
+      break;
+    }
+    if (d.data && typeof d.data === 'object' && !Array.isArray(d.data)) {
+      d = d.data;
+    } else if (d.message && typeof d.message === 'object' && !Array.isArray(d.message)) {
+      d = d.message;
+    } else {
+      break;
+    }
+  }
+  return d;
+};
+
+/**
  * Normalize single Offer payload from Frappe backend
  * @param {Object} raw - Raw offer object or message envelope
  * @returns {Object|null} Normalized Offer record
  */
 export const normalizeOffer = (raw) => {
   if (!raw) return null;
-  const d = raw.data || raw.message || raw;
+  const d = unwrapOfferData(raw);
   if (!d || typeof d !== 'object') return null;
 
-  const id = String(d.name || d.offer_id || d.id || '');
+  const id = getOfferId(d) || String(d.name || d.offer_id || d.id || '');
   if (!id) return null;
 
   const offerName = d.offer_name || id;
@@ -42,10 +97,10 @@ export const normalizeOffer = (raw) => {
   const jobOpeningId = d.job_opening || d.job_id || '';
   const company = d.company || '';
 
-  const offeredSalary = d.offered_salary !== undefined && d.offered_salary !== null ? Number(d.offered_salary) : 0;
+  const offeredSalary = d.offered_salary !== undefined && d.offered_salary !== null ? Number(d.offered_salary) : null;
   const currency = d.currency || 'USD';
   const joiningDate = d.joining_date || null;
-  const probationPeriodMonths = d.probation_period_months !== undefined && d.probation_period_months !== null ? Number(d.probation_period_months) : 0;
+  const probationPeriodMonths = d.probation_period_months !== undefined && d.probation_period_months !== null ? Number(d.probation_period_months) : null;
   const offerDate = d.offer_date || null;
   const expiryDate = d.expiry_date || null;
   const responseDate = d.response_date || null;
@@ -115,8 +170,6 @@ export const normalizeOfferList = (rawEnvelope) => {
 
   const pagination = payload.pagination || payload.meta || rawEnvelope.pagination || {};
 
-  // STRICT RULE: Total must come directly from backend response.
-  // Do NOT fallback to items.length.
   const total = Number(
     payload.total ?? rawEnvelope.total ?? pagination.total ?? 0
   );

@@ -1,5 +1,5 @@
 import apiClient from './apiClient';
-import { normalizeOffer, normalizeOfferList } from '../utils/offerNormalizer';
+import { normalizeOffer, normalizeOfferList, getOfferId } from '../utils/offerNormalizer';
 
 /**
  * RecruitTrain Offer API Service
@@ -73,12 +73,16 @@ export const offerApi = {
 
   /**
    * Retrieve a single Offer record by ID
-   * @param {string} offerId - Primary key name / ID of Offer
+   * @param {string|Object} offerId - Primary key name / ID of Offer or offer object
    * @returns {Promise<Object>} Normalized Offer object
    */
   async getOffer(offerId) {
+    const cleanId = typeof offerId === 'object' ? getOfferId(offerId) : String(offerId || '').trim();
+    if (!cleanId) {
+      throw new Error('Cannot fetch offer: Invalid or missing Offer ID');
+    }
     const response = await apiClient.post('/method/recruitrain_employer.api.offers.get_offer', {
-      offer_id: offerId,
+      offer_id: cleanId,
     });
     return normalizeOffer(response);
   },

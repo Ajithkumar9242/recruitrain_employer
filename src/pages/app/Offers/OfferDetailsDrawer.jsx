@@ -27,6 +27,7 @@ import {
 } from 'react-icons/fi';
 import dayjs from 'dayjs';
 import { useLanguage } from '../../../hooks/useLanguage';
+import { getOfferId } from '../../../utils/offerNormalizer';
 
 const { Title, Text, Paragraph } = Typography;
 
@@ -54,7 +55,9 @@ export const getOfferStatusTagColor = (status) => {
 };
 
 export const OfferDetailsDrawer = ({
+  open,
   visible,
+  offerId: offerIdProp,
   offer,
   loading,
   saving,
@@ -69,11 +72,16 @@ export const OfferDetailsDrawer = ({
 }) => {
   const { t } = useLanguage();
 
-  if (!visible) return null;
+  const isDrawerOpen = open !== undefined ? Boolean(open) : Boolean(visible);
+  if (!isDrawerOpen) return null;
+
+  const canonicalId = offerIdProp ? String(offerIdProp).trim() : getOfferId(offer);
+  const hasId = Boolean(canonicalId);
+  const isLoading = Boolean(loading) || (hasId && !offer);
 
   const currentStatus = offer?.offerStatus || offer?.status || 'Draft';
-  const offerId = offer?.id || offer?.name || offer?.offerId;
-  const offerName = offer?.offerName || offer?.offer_name || offerId;
+  const displayId = canonicalId || offer?.id || offer?.name || offer?.offerId || '';
+  const displayName = offer?.offerName || offer?.offer_name || displayId || t('offers.drawer.title', 'Offer Details');
 
   return (
     <Drawer
@@ -95,11 +103,11 @@ export const OfferDetailsDrawer = ({
           </div>
           <div>
             <div style={{ fontWeight: 600, fontSize: '1rem', lineHeight: 1.2 }}>
-              {offerName || t('offers.drawer.title', 'Offer Details')}
+              {displayName}
             </div>
-            {offerId && (
+            {displayId && (
               <Text type="secondary" style={{ fontSize: '0.75rem' }}>
-                ID: {offerId}
+                ID: {displayId}
               </Text>
             )}
           </div>
@@ -108,28 +116,28 @@ export const OfferDetailsDrawer = ({
       placement="right"
       width={640}
       onClose={onClose}
-      open={visible}
+      open={isDrawerOpen}
       extra={
         <Space>
           {onEdit && offer && (
             <Button
               icon={<FiEdit />}
               onClick={() => onEdit(offer)}
-              disabled={saving || deleting || loading}
+              disabled={saving || deleting || isLoading}
             >
               {t('common.edit', 'Edit')}
             </Button>
           )}
-          {onDelete && offer && (
+          {onDelete && offer && displayId && (
             <Popconfirm
               title={t('offers.messages.deleteConfirmTitle', 'Delete Offer?')}
               description={t('offers.messages.deleteConfirmSub', 'Are you sure you want to delete this offer?')}
-              onConfirm={() => onDelete(offerId)}
+              onConfirm={() => onDelete(displayId)}
               okText={t('common.confirm', 'Delete')}
               cancelText={t('common.cancel', 'Cancel')}
               okButtonProps={{ danger: true }}
             >
-              <Button danger icon={<FiTrash2 />} loading={deleting} disabled={saving || loading}>
+              <Button danger icon={<FiTrash2 />} loading={deleting} disabled={saving || isLoading}>
                 {t('common.delete', 'Delete')}
               </Button>
             </Popconfirm>
@@ -137,8 +145,8 @@ export const OfferDetailsDrawer = ({
         </Space>
       }
     >
-      {loading ? (
-        <div style={{ textAlign: 'center', padding: '60px 0' }}>
+      {isLoading ? (
+        <div style={{ textAlign: 'center', padding: '80px 0' }}>
           <Spin size="large" tip={t('common.loading', 'Loading offer details...')} />
         </div>
       ) : offer ? (
@@ -162,7 +170,7 @@ export const OfferDetailsDrawer = ({
                     type="primary"
                     icon={<FiSend />}
                     loading={saving}
-                    onClick={() => onSend(offerId)}
+                    onClick={() => onSend(displayId)}
                     style={{ backgroundColor: 'var(--brand-navy, #0f172a)' }}
                   >
                     {t('offers.actions.send', 'Send Offer')}
@@ -174,7 +182,7 @@ export const OfferDetailsDrawer = ({
                     type="primary"
                     icon={<FiCheckCircle />}
                     loading={saving}
-                    onClick={() => onAccept(offerId)}
+                    onClick={() => onAccept(displayId)}
                     style={{ backgroundColor: '#52c41a', borderColor: '#52c41a' }}
                   >
                     {t('offers.actions.accept', 'Accept')}
@@ -185,7 +193,7 @@ export const OfferDetailsDrawer = ({
                   <Popconfirm
                     title={t('offers.actions.confirmRejectTitle', 'Reject Offer?')}
                     description={t('offers.actions.confirmRejectSub', 'Are you sure you want to mark this offer as rejected?')}
-                    onConfirm={() => onReject(offerId)}
+                    onConfirm={() => onReject(displayId)}
                     okText={t('common.confirm', 'Confirm')}
                     cancelText={t('common.cancel', 'Cancel')}
                     okButtonProps={{ danger: true }}
@@ -200,7 +208,7 @@ export const OfferDetailsDrawer = ({
                   <Popconfirm
                     title={t('offers.actions.confirmWithdrawTitle', 'Withdraw Offer?')}
                     description={t('offers.actions.confirmWithdrawSub', 'Are you sure you want to withdraw this offer?')}
-                    onConfirm={() => onWithdraw(offerId)}
+                    onConfirm={() => onWithdraw(displayId)}
                     okText={t('common.confirm', 'Confirm')}
                     cancelText={t('common.cancel', 'Cancel')}
                   >
@@ -220,16 +228,13 @@ export const OfferDetailsDrawer = ({
           </Title>
           <Descriptions column={1} bordered size="small" style={{ marginBottom: '20px' }}>
             <Descriptions.Item label={t('offers.table.id', 'Offer ID')}>
-              <Text copyable>{offerId}</Text>
+              <Text copyable>{displayId}</Text>
             </Descriptions.Item>
             <Descriptions.Item label={t('offers.drawer.offerName', 'Offer Name')}>
-              {offerName}
+              {displayName}
             </Descriptions.Item>
-            <Descriptions.Item label={t('offers.table.offerDate', 'Offer Date')}>
-              {offer.offerDate ? dayjs(offer.offerDate).format('YYYY-MM-DD') : '-'}
-            </Descriptions.Item>
-            <Descriptions.Item label={t('offers.table.expiryDate', 'Expiry Date')}>
-              {offer.expiryDate ? dayjs(offer.expiryDate).format('YYYY-MM-DD') : '-'}
+            <Descriptions.Item label={t('offers.table.offerStatus', 'Offer Status')}>
+              <Tag color={getOfferStatusTagColor(currentStatus)}>{currentStatus}</Tag>
             </Descriptions.Item>
           </Descriptions>
 
@@ -239,13 +244,16 @@ export const OfferDetailsDrawer = ({
             {t('offers.drawer.references', 'Authoritative Entity References')}
           </Title>
           <Descriptions column={1} bordered size="small" style={{ marginBottom: '20px' }}>
-            <Descriptions.Item label={t('offers.table.candidate', 'Candidate Reference')}>
+            <Descriptions.Item label={t('offers.table.candidate', 'Candidate')}>
               {offer.candidate ? <Text copyable>{offer.candidate}</Text> : '-'}
             </Descriptions.Item>
-            <Descriptions.Item label={t('offers.drawer.jobAppRef', 'Job Application Reference')}>
+            <Descriptions.Item label={t('offers.drawer.candidateId', 'Candidate ID')}>
+              {offer.candidateId || offer.candidate ? <Text copyable>{offer.candidateId || offer.candidate}</Text> : '-'}
+            </Descriptions.Item>
+            <Descriptions.Item label={t('offers.drawer.jobAppRef', 'Job Application')}>
               {offer.jobApplication ? <Text copyable>{offer.jobApplication}</Text> : '-'}
             </Descriptions.Item>
-            <Descriptions.Item label={t('offers.table.jobOpening', 'Job Opening Reference')}>
+            <Descriptions.Item label={t('offers.table.jobOpening', 'Job Opening')}>
               {offer.jobOpening ? <Text copyable>{offer.jobOpening}</Text> : '-'}
             </Descriptions.Item>
             <Descriptions.Item label={t('offers.table.company', 'Company')}>
@@ -256,13 +264,16 @@ export const OfferDetailsDrawer = ({
           {/* Section 3: Compensation & Schedule */}
           <Title level={5} style={{ marginBottom: 12 }}>
             <FiDollarSign style={{ marginRight: '8px', color: 'var(--brand-teal, #1890ff)' }} />
-            {t('offers.drawer.compensation', 'Compensation & Schedule')}
+            {t('offers.drawer.compensation', 'Compensation')}
           </Title>
           <Descriptions column={1} bordered size="small" style={{ marginBottom: '20px' }}>
             <Descriptions.Item label={t('offers.table.offeredSalary', 'Offered Salary')}>
               {offer.offeredSalary !== undefined && offer.offeredSalary !== null
                 ? `${offer.currency || 'USD'} ${Number(offer.offeredSalary).toLocaleString()}`
                 : '-'}
+            </Descriptions.Item>
+            <Descriptions.Item label={t('offers.form.currencyLabel', 'Currency')}>
+              {offer.currency || 'USD'}
             </Descriptions.Item>
             <Descriptions.Item label={t('offers.table.joiningDate', 'Joining Date')}>
               {offer.joiningDate ? dayjs(offer.joiningDate).format('YYYY-MM-DD') : '-'}
@@ -280,6 +291,12 @@ export const OfferDetailsDrawer = ({
             {t('offers.drawer.employment', 'Offer Details')}
           </Title>
           <Descriptions column={1} bordered size="small" style={{ marginBottom: '20px' }}>
+            <Descriptions.Item label={t('offers.table.offerDate', 'Offer Date')}>
+              {offer.offerDate ? dayjs(offer.offerDate).format('YYYY-MM-DD') : '-'}
+            </Descriptions.Item>
+            <Descriptions.Item label={t('offers.table.expiryDate', 'Expiry Date')}>
+              {offer.expiryDate ? dayjs(offer.expiryDate).format('YYYY-MM-DD') : '-'}
+            </Descriptions.Item>
             <Descriptions.Item label={t('offers.drawer.employmentType', 'Employment Type')}>
               {offer.employmentType || '-'}
             </Descriptions.Item>
@@ -327,7 +344,7 @@ export const OfferDetailsDrawer = ({
                       {offer.offerLetter.split('/').pop()}
                     </Text>
                     <Text type="secondary" style={{ fontSize: '0.75rem' }}>
-                      Frappe Attachment URL
+                      Frappe Attachment Document
                     </Text>
                   </div>
                 </Space>
@@ -354,7 +371,7 @@ export const OfferDetailsDrawer = ({
                 </Space>
               </div>
             ) : (
-              <Text type="secondary">-</Text>
+              <Text type="secondary">{t('offers.drawer.noLetterAttached', 'No offer letter attached.')}</Text>
             )}
           </div>
 
@@ -371,7 +388,9 @@ export const OfferDetailsDrawer = ({
           )}
         </div>
       ) : (
-        <Text type="secondary">{t('offers.drawer.noData', 'No offer selected.')}</Text>
+        <div style={{ padding: '40px 0', textAlign: 'center' }}>
+          <Text type="secondary">{t('offers.drawer.noData', 'No offer details selected.')}</Text>
+        </div>
       )}
     </Drawer>
   );
