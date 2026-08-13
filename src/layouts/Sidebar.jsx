@@ -2,6 +2,7 @@ import React from 'react';
 import { Button, Tooltip, Typography } from 'antd';
 import {
   FiGrid,
+  FiBell,
   FiBriefcase,
   FiUsers,
   FiFileText,
@@ -18,6 +19,7 @@ import { motion } from 'framer-motion';
 import { useSidebar } from '../hooks/useSidebar';
 import { useLanguage } from '../hooks/useLanguage';
 import { usePrefersReducedMotion } from '../hooks/usePrefersReducedMotion';
+import CompanyIdentity from './CompanyIdentity';
 import NavItem from '../components/navigation/NavItem';
 import NavigationGroup from '../components/navigation/NavigationGroup';
 import { ROUTES } from '../routes/routes';
@@ -44,20 +46,8 @@ export const Sidebar = ({ isMobileDrawer = false, onItemClick }) => {
       animate={collapsed ? 'collapsed' : 'expanded'}
       variants={isMobileDrawer ? {} : sidebarVariants}
     >
-      {/* Brand Header */}
-      <div className="sidebar-brand">
-        <div className="sidebar-brand-icon">RT</div>
-        {!collapsed && (
-          <div className="sidebar-brand-text">
-            <Text strong style={{ color: 'var(--text-main)', fontSize: '1rem', fontFamily: 'var(--font-family-heading)' }}>
-              RecruitTrain
-            </Text>
-            <Text type="secondary" style={{ fontSize: '0.6875rem', letterSpacing: '0.05em', textTransform: 'uppercase', display: 'block' }}>
-              Employer ATS
-            </Text>
-          </div>
-        )}
-      </div>
+      {/* Brand Header — Authoritative Backend Company Profile */}
+      <CompanyIdentity collapsed={collapsed} />
 
       {/* Scrollable Navigation Area */}
       <div className="sidebar-nav-container">
@@ -67,6 +57,13 @@ export const Sidebar = ({ isMobileDrawer = false, onItemClick }) => {
             to={ROUTES.DASHBOARD}
             labelKey="nav.dashboard"
             icon={FiGrid}
+            isCollapsed={collapsed}
+            onClick={onItemClick}
+          />
+          <NavItem
+            to={ROUTES.NOTIFICATIONS}
+            labelKey="shell.notifications"
+            icon={FiBell}
             isCollapsed={collapsed}
             onClick={onItemClick}
           />

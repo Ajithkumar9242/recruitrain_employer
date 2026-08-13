@@ -10,6 +10,23 @@ const toCamelCaseString = (str) => {
   });
 };
 
+export const extractPayload = (raw) => {
+  if (raw === null || raw === undefined) return raw;
+  if (raw.message && typeof raw.message === 'object' && raw.message.data !== undefined) {
+    return raw.message.data;
+  }
+  if (raw.data && typeof raw.data === 'object' && raw.data.data !== undefined) {
+    return raw.data.data;
+  }
+  if (raw.message !== undefined && raw.message !== null) {
+    return raw.message;
+  }
+  if (raw.data !== undefined && raw.data !== null) {
+    return raw.data;
+  }
+  return raw;
+};
+
 export const normalizeData = (data) => {
   if (data === null || data === undefined) {
     return data;
@@ -30,3 +47,4 @@ export const normalizeData = (data) => {
 
   return data;
 };
+

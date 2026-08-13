@@ -33,10 +33,21 @@ export const useAuth = () => {
     dispatch(setAuthInitializing());
     try {
       const userData = await authApi.me();
-      if (userData && (userData.email || userData.user || userData.name)) {
+      if (
+        userData &&
+        userData.authenticated !== false &&
+        (userData.email || userData.user || userData.name || userData.username || userData.fullName)
+      ) {
+        const userObj =
+          typeof userData.user === 'object'
+            ? userData.user
+            : userData.email || userData.fullName || userData.name
+            ? userData
+            : { user: userData.user || userData };
+
         dispatch(
           setCredentials({
-            user: userData.user || userData,
+            user: userObj,
           })
         );
       } else {

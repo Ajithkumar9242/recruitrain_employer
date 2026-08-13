@@ -1,13 +1,20 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import { candidateApi } from '../../services/candidateApi';
+import {
+  normalizeCandidate,
+  normalizeCandidateList,
+  normalizeProfileCompleteness,
+} from '../../utils/candidateNormalizer';
 
 const initialState = {
   list: [],
   selectedCandidate: null,
+  profileCompleteness: { score: 0, completeness: 0, fields: {} },
   status: 'idle', // 'idle' | 'loading' | 'succeeded' | 'failed'
   drawerLoading: false,
   actionStatus: 'idle', // 'idle' | 'saving' | 'deleting' | 'succeeded' | 'failed'
   error: null,
+  viewMode: 'all', // 'all' | 'domestic' | 'international'
   pagination: {
     page: 1,
     pageSize: 10,
@@ -35,19 +42,73 @@ export const fetchCandidates = createAsyncThunk(
         pageSize: overrideParams.pageSize || state.pagination.pageSize,
         search: overrideParams.search !== undefined ? overrideParams.search : state.filters.search,
         status: overrideParams.status !== undefined ? overrideParams.status : state.filters.status,
+        country: overrideParams.country !== undefined ? overrideParams.country : state.filters.country,
         profession: overrideParams.profession !== undefined ? overrideParams.profession : state.filters.profession,
         employmentType:
           overrideParams.employmentType !== undefined
             ? overrideParams.employmentType
             : state.filters.employmentType,
-        country: overrideParams.country !== undefined ? overrideParams.country : state.filters.country,
         orderBy: overrideParams.orderBy || state.filters.orderBy,
       };
 
-      const result = await candidateApi.listCandidates(params);
-      return { result, params };
+      const response = await candidateApi.listCandidates(params);
+      const normalized = normalizeCandidateList(response);
+      return { normalized, params };
     } catch (err) {
       return rejectWithValue(err.message || 'Failed to fetch candidate list');
+    }
+  }
+);
+
+export const searchCandidates = createAsyncThunk(
+  'candidate/searchCandidates',
+  async ({ search = '', page = 1, pageSize = 10 } = {}, { rejectWithValue }) => {
+    try {
+      const response = await candidateApi.searchCandidates({ search, page, pageSize });
+      const normalized = normalizeCandidateList(response);
+      return { normalized, search };
+    } catch (err) {
+      return rejectWithValue(err.message || 'Failed to search candidates');
+    }
+  }
+);
+
+export const fetchDomesticCandidates = createAsyncThunk(
+  'candidate/fetchDomesticCandidates',
+  async (overrideParams = {}, { getState, rejectWithValue }) => {
+    try {
+      const state = getState().candidate;
+      const params = {
+        page: overrideParams.page || state.pagination.page,
+        pageSize: overrideParams.pageSize || state.pagination.pageSize,
+        search: overrideParams.search !== undefined ? overrideParams.search : state.filters.search,
+        orderBy: overrideParams.orderBy || state.filters.orderBy,
+      };
+      const response = await candidateApi.listDomesticCandidates(params);
+      const normalized = normalizeCandidateList(response);
+      return { normalized, params };
+    } catch (err) {
+      return rejectWithValue(err.message || 'Failed to fetch domestic candidates');
+    }
+  }
+);
+
+export const fetchInternationalCandidates = createAsyncThunk(
+  'candidate/fetchInternationalCandidates',
+  async (overrideParams = {}, { getState, rejectWithValue }) => {
+    try {
+      const state = getState().candidate;
+      const params = {
+        page: overrideParams.page || state.pagination.page,
+        pageSize: overrideParams.pageSize || state.pagination.pageSize,
+        search: overrideParams.search !== undefined ? overrideParams.search : state.filters.search,
+        orderBy: overrideParams.orderBy || state.filters.orderBy,
+      };
+      const response = await candidateApi.listInternationalCandidates(params);
+      const normalized = normalizeCandidateList(response);
+      return { normalized, params };
+    } catch (err) {
+      return rejectWithValue(err.message || 'Failed to fetch international candidates');
     }
   }
 );
@@ -56,10 +117,24 @@ export const fetchCandidateById = createAsyncThunk(
   'candidate/fetchCandidateById',
   async (candidateId, { rejectWithValue }) => {
     try {
-      const data = await candidateApi.getCandidate(candidateId);
+      const response = await candidateApi.getCandidate(candidateId);
+      const data = normalizeCandidate(response);
       return data;
     } catch (err) {
       return rejectWithValue(err.message || 'Failed to fetch candidate profile');
+    }
+  }
+);
+
+export const fetchProfileCompleteness = createAsyncThunk(
+  'candidate/fetchProfileCompleteness',
+  async (candidateId, { rejectWithValue }) => {
+    try {
+      const response = await candidateApi.getProfileCompleteness(candidateId);
+      const data = normalizeProfileCompleteness(response);
+      return data;
+    } catch (err) {
+      return rejectWithValue(err.message || 'Failed to fetch profile completeness');
     }
   }
 );
@@ -68,7 +143,8 @@ export const createCandidate = createAsyncThunk(
   'candidate/createCandidate',
   async (payload, { dispatch, rejectWithValue }) => {
     try {
-      const data = await candidateApi.createCandidate(payload);
+      const response = await candidateApi.createCandidate(payload);
+      const data = normalizeCandidate(response);
       dispatch(fetchCandidates({ page: 1 }));
       return data;
     } catch (err) {
@@ -81,7 +157,8 @@ export const updateCandidate = createAsyncThunk(
   'candidate/updateCandidate',
   async ({ candidateId, data }, { dispatch, rejectWithValue }) => {
     try {
-      const updated = await candidateApi.updateCandidate(candidateId, data);
+      const response = await candidateApi.updateCandidate(candidateId, data);
+      const updated = normalizeCandidate(response);
       dispatch(fetchCandidates());
       return updated;
     } catch (err) {
@@ -99,6 +176,48 @@ export const deleteCandidate = createAsyncThunk(
       return candidateId;
     } catch (err) {
       return rejectWithValue(err.message || 'Failed to delete candidate');
+    }
+  }
+);
+
+export const updateCandidateSkills = createAsyncThunk(
+  'candidate/updateCandidateSkills',
+  async ({ candidateId, skills }, { dispatch, rejectWithValue }) => {
+    try {
+      await candidateApi.updateSkills(candidateId, skills);
+      dispatch(fetchCandidateById(candidateId));
+      dispatch(fetchProfileCompleteness(candidateId));
+      return { candidateId, skills };
+    } catch (err) {
+      return rejectWithValue(err.message || 'Failed to update candidate skills');
+    }
+  }
+);
+
+export const updateCandidateEducation = createAsyncThunk(
+  'candidate/updateCandidateEducation',
+  async ({ candidateId, education }, { dispatch, rejectWithValue }) => {
+    try {
+      await candidateApi.updateEducation(candidateId, education);
+      dispatch(fetchCandidateById(candidateId));
+      dispatch(fetchProfileCompleteness(candidateId));
+      return { candidateId, education };
+    } catch (err) {
+      return rejectWithValue(err.message || 'Failed to update candidate education');
+    }
+  }
+);
+
+export const updateCandidateExperience = createAsyncThunk(
+  'candidate/updateCandidateExperience',
+  async ({ candidateId, experience }, { dispatch, rejectWithValue }) => {
+    try {
+      await candidateApi.updateExperience(candidateId, experience);
+      dispatch(fetchCandidateById(candidateId));
+      dispatch(fetchProfileCompleteness(candidateId));
+      return { candidateId, experience };
+    } catch (err) {
+      return rejectWithValue(err.message || 'Failed to update candidate experience');
     }
   }
 );
@@ -130,8 +249,8 @@ export const saveSubresource = createAsyncThunk(
         default:
           throw new Error(`Unsupported resource type ${resourceType}`);
       }
-      // Refresh candidate profile
       dispatch(fetchCandidateById(candidateId));
+      dispatch(fetchProfileCompleteness(candidateId));
       return { candidateId, resourceType, result };
     } catch (err) {
       return rejectWithValue(err.message || `Failed to update ${resourceType}`);
@@ -145,10 +264,14 @@ const candidateSlice = createSlice({
   reducers: {
     setCandidateFilters: (state, action) => {
       state.filters = { ...state.filters, ...action.payload };
-      state.pagination.page = 1; // Reset to page 1 on filter change
+      state.pagination.page = 1;
     },
     resetCandidateFilters: (state) => {
       state.filters = initialState.filters;
+      state.pagination.page = 1;
+    },
+    setViewMode: (state, action) => {
+      state.viewMode = action.payload; // 'all' | 'domestic' | 'international'
       state.pagination.page = 1;
     },
     setSelectedCandidate: (state, action) => {
@@ -156,6 +279,7 @@ const candidateSlice = createSlice({
     },
     clearSelectedCandidate: (state) => {
       state.selectedCandidate = null;
+      state.profileCompleteness = { score: 0, completeness: 0, fields: {} };
     },
     clearCandidateError: (state) => {
       state.error = null;
@@ -169,18 +293,84 @@ const candidateSlice = createSlice({
         state.error = null;
       })
       .addCase(fetchCandidates.fulfilled, (state, action) => {
-        const { result, params } = action.payload;
+        const { normalized, params } = action.payload;
         state.status = 'succeeded';
-        state.list = result.items;
+        state.list = normalized.items;
         state.pagination = {
-          page: result.page,
-          pageSize: result.pageSize,
-          total: result.total,
-          totalPages: result.totalPages,
+          page: normalized.page,
+          pageSize: normalized.pageSize,
+          total: normalized.total,
+          totalPages: normalized.totalPages,
         };
         state.filters = { ...state.filters, ...params };
       })
       .addCase(fetchCandidates.rejected, (state, action) => {
+        state.status = 'failed';
+        state.error = action.payload;
+      })
+
+      // searchCandidates
+      .addCase(searchCandidates.pending, (state) => {
+        state.status = 'loading';
+        state.error = null;
+      })
+      .addCase(searchCandidates.fulfilled, (state, action) => {
+        const { normalized, search } = action.payload;
+        state.status = 'succeeded';
+        state.list = normalized.items;
+        state.pagination = {
+          page: normalized.page,
+          pageSize: normalized.pageSize,
+          total: normalized.total,
+          totalPages: normalized.totalPages,
+        };
+        state.filters.search = search;
+      })
+      .addCase(searchCandidates.rejected, (state, action) => {
+        state.status = 'failed';
+        state.error = action.payload;
+      })
+
+      // fetchDomesticCandidates
+      .addCase(fetchDomesticCandidates.pending, (state) => {
+        state.status = 'loading';
+        state.error = null;
+      })
+      .addCase(fetchDomesticCandidates.fulfilled, (state, action) => {
+        const { normalized, params } = action.payload;
+        state.status = 'succeeded';
+        state.list = normalized.items;
+        state.pagination = {
+          page: normalized.page,
+          pageSize: normalized.pageSize,
+          total: normalized.total,
+          totalPages: normalized.totalPages,
+        };
+        state.filters = { ...state.filters, ...params };
+      })
+      .addCase(fetchDomesticCandidates.rejected, (state, action) => {
+        state.status = 'failed';
+        state.error = action.payload;
+      })
+
+      // fetchInternationalCandidates
+      .addCase(fetchInternationalCandidates.pending, (state) => {
+        state.status = 'loading';
+        state.error = null;
+      })
+      .addCase(fetchInternationalCandidates.fulfilled, (state, action) => {
+        const { normalized, params } = action.payload;
+        state.status = 'succeeded';
+        state.list = normalized.items;
+        state.pagination = {
+          page: normalized.page,
+          pageSize: normalized.pageSize,
+          total: normalized.total,
+          totalPages: normalized.totalPages,
+        };
+        state.filters = { ...state.filters, ...params };
+      })
+      .addCase(fetchInternationalCandidates.rejected, (state, action) => {
         state.status = 'failed';
         state.error = action.payload;
       })
@@ -196,6 +386,11 @@ const candidateSlice = createSlice({
       .addCase(fetchCandidateById.rejected, (state, action) => {
         state.drawerLoading = false;
         state.error = action.payload;
+      })
+
+      // fetchProfileCompleteness
+      .addCase(fetchProfileCompleteness.fulfilled, (state, action) => {
+        state.profileCompleteness = action.payload;
       })
 
       // createCandidate
@@ -245,6 +440,7 @@ const candidateSlice = createSlice({
 export const {
   setCandidateFilters,
   resetCandidateFilters,
+  setViewMode,
   setSelectedCandidate,
   clearSelectedCandidate,
   clearCandidateError,
@@ -252,11 +448,14 @@ export const {
 
 export const selectCandidateList = (state) => state.candidate.list;
 export const selectSelectedCandidate = (state) => state.candidate.selectedCandidate;
+export const selectProfileCompleteness = (state) => state.candidate.profileCompleteness;
 export const selectCandidateStatus = (state) => state.candidate.status;
 export const selectCandidateDrawerLoading = (state) => state.candidate.drawerLoading;
 export const selectCandidateActionStatus = (state) => state.candidate.actionStatus;
 export const selectCandidateError = (state) => state.candidate.error;
+export const selectCandidateViewMode = (state) => state.candidate.viewMode;
 export const selectCandidatePagination = (state) => state.candidate.pagination;
 export const selectCandidateFilters = (state) => state.candidate.filters;
 
 export default candidateSlice.reducer;
+

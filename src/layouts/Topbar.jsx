@@ -1,5 +1,6 @@
-import React, { useState } from 'react';
-import { Input, Button, Dropdown, Avatar, Space, Typography, Popover, message, Divider } from 'antd';
+import React, { useState, useEffect } from 'react';
+import { Input, Button, Dropdown, Avatar, Space, Typography, Badge, message } from 'antd';
+import { useNavigate } from 'react-router-dom';
 import {
   FiMenu,
   FiSearch,
@@ -12,6 +13,8 @@ import {
 import { useAuth } from '../hooks/useAuth';
 import { useSidebar } from '../hooks/useSidebar';
 import { useLanguage } from '../hooks/useLanguage';
+import { useNotifications } from '../hooks/useNotifications';
+import { ROUTES } from '../routes/routes';
 import Breadcrumbs from '../components/navigation/Breadcrumbs';
 import LanguageToggle from '../components/common/LanguageToggle';
 import ThemeToggle from '../components/common/ThemeToggle';
@@ -20,11 +23,17 @@ import './Layouts.css';
 const { Text } = Typography;
 
 export const Topbar = () => {
+  const navigate = useNavigate();
   const { user, logout } = useAuth();
   const { toggleMobileDrawer } = useSidebar();
   const { t } = useLanguage();
+  const { counts, fetchCounts } = useNotifications();
 
   const [searchValue, setSearchValue] = useState('');
+
+  useEffect(() => {
+    fetchCounts();
+  }, [fetchCounts]);
 
   const handleSearchSubmit = (e) => {
     e.preventDefault();
@@ -34,7 +43,7 @@ export const Topbar = () => {
   };
 
   const handleNotificationClick = () => {
-    message.info(t('shell.noNotifications'));
+    navigate(ROUTES.NOTIFICATIONS);
   };
 
   const profileMenuItems = [
@@ -113,14 +122,16 @@ export const Topbar = () => {
       {/* Right Section: Actions & Profile */}
       <div className="topbar-right">
         <Space size="small" align="center">
-          {/* Notification Bell UI Foundation */}
-          <Button
-            type="text"
-            icon={<FiBell size={18} />}
-            onClick={handleNotificationClick}
-            aria-label={t('shell.notifications')}
-            className="topbar-action-btn"
-          />
+          {/* Notification Bell with authoritative unread count badge */}
+          <Badge count={counts.unread} overflowCount={99} size="small">
+            <Button
+              type="text"
+              icon={<FiBell size={18} />}
+              onClick={handleNotificationClick}
+              aria-label={t('shell.notifications')}
+              className="topbar-action-btn"
+            />
+          </Badge>
 
           {/* Language Switcher */}
           <div className="topbar-control-item">

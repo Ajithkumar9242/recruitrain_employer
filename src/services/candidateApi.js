@@ -1,24 +1,24 @@
 import apiClient from './apiClient';
-import { normalizeCandidate, normalizeCandidateList } from '../utils/candidateNormalizer';
 
 /**
  * RecruitTrain Candidate API Service
- * Authoritative Backend Integration with Frappe Candidate Controller
+ * Authoritative Backend Integration with Frappe Candidate Controller (recruitrain_employer.api.candidate)
+ * Architectural Rule: Backend is single source of truth. Company scope set by backend session context.
  */
 export const candidateApi = {
   /**
    * List company-scoped candidates with server-side pagination, search, and filtering
-   * @param {Object} params - { page, pageSize, search, status, profession, employmentType, country, orderBy }
-   * @returns {Promise<Object>} Normalized paginated candidates
+   * @param {Object} params - { page, pageSize, search, status, country, profession, employmentType, orderBy }
+   * @returns {Promise<Object>} Backend response envelope
    */
   async listCandidates({
     page = 1,
     pageSize = 10,
     search = '',
     status = null,
+    country = null,
     profession = null,
     employmentType = null,
-    country = null,
     orderBy = 'creation desc',
   } = {}) {
     const payload = {
@@ -27,87 +27,128 @@ export const candidateApi = {
       order_by: orderBy,
     };
 
-    if (search) payload.search = search;
+    if (search && search.trim()) payload.search_term = search.trim();
     if (status) payload.status = status;
+    if (country) payload.country = country;
     if (profession) payload.profession = profession;
     if (employmentType) payload.employment_type = employmentType;
-    if (country) payload.country = country;
 
     const response = await apiClient.post('/method/recruitrain_employer.api.candidate.list_candidates', payload);
-    const rawData = response?.data || response?.message || response;
-    return normalizeCandidateList(rawData);
+    return response;
   },
 
   /**
    * Search candidates by term
-   * @param {Object} params - { query, page, pageSize }
-   * @returns {Promise<Object>} Normalized search results
+   * @param {Object} params - { query, search, page, pageSize }
+   * @returns {Promise<Object>} Backend response envelope
    */
-  async searchCandidates({ query = '', page = 1, pageSize = 10 } = {}) {
+  async searchCandidates({ query = '', search = '', page = 1, pageSize = 10 } = {}) {
+    const searchTerm = (query || search || '').trim();
     const payload = {
-      query,
-      search_term: query,
+      query: searchTerm,
+      search_term: searchTerm,
       page,
       page_size: pageSize,
     };
     const response = await apiClient.post('/method/recruitrain_employer.api.candidate.search_candidates', payload);
-    const rawData = response?.data || response?.message || response;
-    return normalizeCandidateList(rawData);
+    return response;
+  },
+
+  /**
+   * List domestic candidates
+   * @param {Object} params - { page, pageSize, search, orderBy }
+   * @returns {Promise<Object>} Backend response envelope
+   */
+  async listDomesticCandidates({ page = 1, pageSize = 10, search = '', orderBy = 'creation desc' } = {}) {
+    const payload = {
+      page,
+      page_size: pageSize,
+      order_by: orderBy,
+    };
+    if (search && search.trim()) payload.search_term = search.trim();
+    const response = await apiClient.post('/method/recruitrain_employer.api.candidate.list_domestic_candidates', payload);
+    return response;
+  },
+
+  /**
+   * List international candidates
+   * @param {Object} params - { page, pageSize, search, orderBy }
+   * @returns {Promise<Object>} Backend response envelope
+   */
+  async listInternationalCandidates({ page = 1, pageSize = 10, search = '', orderBy = 'creation desc' } = {}) {
+    const payload = {
+      page,
+      page_size: pageSize,
+      order_by: orderBy,
+    };
+    if (search && search.trim()) payload.search_term = search.trim();
+    const response = await apiClient.post('/method/recruitrain_employer.api.candidate.list_international_candidates', payload);
+    return response;
   },
 
   /**
    * Get single candidate profile by candidate ID / record name
-   * @param {string} candidateId - Primary key name
-   * @returns {Promise<Object>} Normalized candidate profile
+   * @param {string} candidateId - Primary key candidate ID
+   * @returns {Promise<Object>} Backend response envelope
    */
   async getCandidate(candidateId) {
     const response = await apiClient.post('/method/recruitrain_employer.api.candidate.get_candidate', {
       candidate_id: candidateId,
       name: candidateId,
     });
-    const rawData = response?.data || response?.message || response;
-    return normalizeCandidate(rawData);
+    return response;
   },
 
   /**
    * Create a new Candidate record
    * @param {Object} data - Candidate form payload
-   * @returns {Promise<Object>} Normalized created candidate
+   * @returns {Promise<Object>} Backend response envelope
    */
   async createCandidate(data) {
     const response = await apiClient.post('/method/recruitrain_employer.api.candidate.create_candidate', data);
-    const rawData = response?.data || response?.message || response;
-    return normalizeCandidate(rawData);
+    return response;
   },
 
   /**
    * Update existing Candidate profile fields
    * @param {string} candidateId - Candidate ID
    * @param {Object} data - Updated candidate fields
-   * @returns {Promise<Object>} Normalized updated candidate
+   * @returns {Promise<Object>} Backend response envelope
    */
   async updateCandidate(candidateId, data) {
     const payload = {
-      ...data,
       candidate_id: candidateId,
       name: candidateId,
+      ...data,
     };
     const response = await apiClient.post('/method/recruitrain_employer.api.candidate.update_candidate', payload);
-    const rawData = response?.data || response?.message || response;
-    return normalizeCandidate(rawData);
+    return response;
   },
 
   /**
-   * Delete Candidate record
+   * Delete Candidate record (fails with conflict if recruitment history exists)
    * @param {string} candidateId - Candidate ID
-   * @returns {Promise<Object>} Confirmation payload
+   * @returns {Promise<Object>} Backend response envelope
    */
   async deleteCandidate(candidateId) {
     const response = await apiClient.post('/method/recruitrain_employer.api.candidate.delete_candidate', {
       candidate_id: candidateId,
       name: candidateId,
     });
-    return response?.data || response?.message || response;
+    return response;
+  },
+
+  /**
+   * Retrieve authoritative profile completeness score for candidate
+   * @param {string} candidateId - Candidate ID
+   * @returns {Promise<Object>} Backend response envelope
+   */
+  async getProfileCompleteness(candidateId) {
+    const response = await apiClient.post('/method/recruitrain_employer.api.candidate.get_profile_completeness', {
+      candidate_id: candidateId,
+      name: candidateId,
+    });
+    return response;
   },
 
   /**
@@ -117,48 +158,54 @@ export const candidateApi = {
     const response = await apiClient.post('/method/recruitrain_employer.api.candidate.update_education', {
       candidate_id: candidateId,
       education: items,
+      items: items,
     });
-    return response?.data || response?.message || response;
+    return response;
   },
 
   async updateExperience(candidateId, items) {
     const response = await apiClient.post('/method/recruitrain_employer.api.candidate.update_experience', {
       candidate_id: candidateId,
       experience: items,
+      items: items,
     });
-    return response?.data || response?.message || response;
+    return response;
   },
 
   async updateSkills(candidateId, items) {
     const response = await apiClient.post('/method/recruitrain_employer.api.candidate.update_skills', {
       candidate_id: candidateId,
       skills: items,
+      items: items,
     });
-    return response?.data || response?.message || response;
+    return response;
   },
 
   async updateLanguages(candidateId, items) {
     const response = await apiClient.post('/method/recruitrain_employer.api.candidate.update_languages', {
       candidate_id: candidateId,
       languages: items,
+      items: items,
     });
-    return response?.data || response?.message || response;
+    return response;
   },
 
   async updateCertifications(candidateId, items) {
     const response = await apiClient.post('/method/recruitrain_employer.api.candidate.update_certifications', {
       candidate_id: candidateId,
       certifications: items,
+      items: items,
     });
-    return response?.data || response?.message || response;
+    return response;
   },
 
   async updateDocuments(candidateId, items) {
     const response = await apiClient.post('/method/recruitrain_employer.api.candidate.update_documents', {
       candidate_id: candidateId,
       documents: items,
+      items: items,
     });
-    return response?.data || response?.message || response;
+    return response;
   },
 
   async updatePassportAndVisa(candidateId, payload) {
@@ -166,8 +213,7 @@ export const candidateApi = {
       candidate_id: candidateId,
       ...payload,
     });
-    const rawData = response?.data || response?.message || response;
-    return normalizeCandidate(rawData);
+    return response;
   },
 
   /**
@@ -191,8 +237,9 @@ export const candidateApi = {
         'Content-Type': 'multipart/form-data',
       },
     });
-    return response?.message || response?.data || response;
+    return response;
   },
 };
 
 export default candidateApi;
+

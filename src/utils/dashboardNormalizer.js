@@ -8,7 +8,8 @@ import { normalizeData } from '../services/normalizer';
 
 export const normalizeOverview = (data) => {
   if (!data || typeof data !== 'object') return null;
-  const raw = normalizeData(data);
+  const target = data?.data || data;
+  const raw = normalizeData(target);
   return {
     openJobs: raw.openJobs !== undefined ? Number(raw.openJobs) : (raw.open_jobs !== undefined ? Number(raw.open_jobs) : null),
     totalCandidates: raw.totalCandidates !== undefined ? Number(raw.totalCandidates) : (raw.total_candidates !== undefined ? Number(raw.total_candidates) : null),
@@ -23,7 +24,8 @@ export const normalizeOverview = (data) => {
 
 export const normalizePipelineSummary = (data) => {
   if (!data) return [];
-  const rawList = Array.isArray(data) ? data : (data.stages || data.summary || []);
+  const target = data?.data || data;
+  const rawList = Array.isArray(target) ? target : (target.stages || target.summary || []);
   return rawList.map((item, idx) => {
     const norm = normalizeData(item);
     return {
@@ -37,7 +39,8 @@ export const normalizePipelineSummary = (data) => {
 
 export const normalizeTodaysInterviews = (data) => {
   if (!data) return [];
-  const rawList = Array.isArray(data) ? data : (data.interviews || data.data || []);
+  const target = data?.data || data;
+  const rawList = Array.isArray(target) ? target : (target.interviews || target.items || target.data || []);
   return rawList.map((item, idx) => {
     const norm = normalizeData(item);
     return {
@@ -54,7 +57,8 @@ export const normalizeTodaysInterviews = (data) => {
 
 export const normalizeRecentActivity = (data) => {
   if (!data) return [];
-  const rawList = Array.isArray(data) ? data : (data.activities || data.logs || data.data || []);
+  const target = data?.data || data;
+  const rawList = Array.isArray(target) ? target : (target.activities || target.logs || target.items || target.data || []);
   return rawList.map((item, idx) => {
     const norm = normalizeData(item);
     return {
@@ -70,7 +74,8 @@ export const normalizeRecentActivity = (data) => {
 
 export const normalizeRecentApplications = (data) => {
   if (!data) return [];
-  const rawList = Array.isArray(data) ? data : (data.applications || data.data || []);
+  const target = data?.data || data;
+  const rawList = Array.isArray(target) ? target : (target.applications || target.items || target.data || []);
   return rawList.map((item, idx) => {
     const norm = normalizeData(item);
     return {

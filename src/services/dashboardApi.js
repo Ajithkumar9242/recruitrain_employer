@@ -1,4 +1,5 @@
 import apiClient from './apiClient';
+import { extractPayload } from './normalizer';
 import {
   normalizeOverview,
   normalizePipelineSummary,
@@ -19,7 +20,7 @@ export const dashboardApi = {
   async getOverview(params = {}) {
     try {
       const response = await apiClient.get('/method/recruitrain_employer.api.dashboard.get_overview', { params });
-      const rawData = response?.message || response?.data || response;
+      const rawData = extractPayload(response);
       return normalizeOverview(rawData);
     } catch (primaryErr) {
       if (primaryErr?.status === 404) {
@@ -37,7 +38,7 @@ export const dashboardApi = {
   async getPipelineSummary(params = {}) {
     try {
       const response = await apiClient.get('/method/recruitrain_employer.api.dashboard.get_pipeline_summary', { params });
-      const rawData = response?.message || response?.data || response;
+      const rawData = extractPayload(response);
       return normalizePipelineSummary(rawData);
     } catch (primaryErr) {
       if (primaryErr?.status === 404) {
@@ -56,7 +57,7 @@ export const dashboardApi = {
       const response = await apiClient.get('/method/recruitrain_employer.api.interviews.list_interviews', {
         params: { ...params, scope: 'today' },
       });
-      const rawData = response?.message || response?.data || response;
+      const rawData = extractPayload(response);
       return normalizeTodaysInterviews(rawData);
     } catch (primaryErr) {
       if (primaryErr?.status === 404) {
@@ -73,7 +74,7 @@ export const dashboardApi = {
   async getRecentActivity(params = {}) {
     try {
       const response = await apiClient.get('/method/recruitrain_employer.api.dashboard.get_recent_activity', { params });
-      const rawData = response?.message || response?.data || response;
+      const rawData = extractPayload(response);
       return normalizeRecentActivity(rawData);
     } catch (primaryErr) {
       if (primaryErr?.status === 404) {
@@ -92,7 +93,7 @@ export const dashboardApi = {
       const response = await apiClient.get('/method/recruitrain_employer.api.job_application.list_applications', {
         params: { limit_page_length: 5, ...params },
       });
-      const rawData = response?.message || response?.data || response;
+      const rawData = extractPayload(response);
       return normalizeRecentApplications(rawData);
     } catch (primaryErr) {
       if (primaryErr?.status === 404) {

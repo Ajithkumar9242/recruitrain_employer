@@ -1,5 +1,5 @@
 import apiClient from './apiClient';
-import { normalizeData } from './normalizer';
+import { normalizeData, extractPayload } from './normalizer';
 
 /**
  * RecruitTrain Authentication API Service
@@ -23,13 +23,13 @@ export const authApi = {
 
     try {
       const response = await apiClient.post('/method/recruitrain_employer.api.auth.login', payload);
-      const rawData = response?.message || response?.data || response;
+      const rawData = extractPayload(response);
       return normalizeData(rawData);
     } catch (primaryErr) {
       // Fallback to standard Frappe core login method if custom app endpoint path differs
       if (primaryErr?.status === 404) {
         const response = await apiClient.post('/method/login', { usr: email, pwd: password });
-        const rawData = response?.message || response?.data || response;
+        const rawData = extractPayload(response);
         return normalizeData(rawData);
       }
       throw primaryErr;
@@ -43,12 +43,12 @@ export const authApi = {
   async me() {
     try {
       const response = await apiClient.get('/method/recruitrain_employer.api.auth.me');
-      const rawData = response?.message || response?.data || response;
+      const rawData = extractPayload(response);
       return normalizeData(rawData);
     } catch (primaryErr) {
       if (primaryErr?.status === 404) {
         const response = await apiClient.get('/method/frappe.auth.get_logged_user');
-        const rawData = response?.message || response?.data || response;
+        const rawData = extractPayload(response);
         return normalizeData(rawData);
       }
       throw primaryErr;

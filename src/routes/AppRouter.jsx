@@ -13,6 +13,13 @@ import ResetPasswordPage from '../pages/auth/ResetPasswordPage';
 import AppLayout from '../layouts/AppLayout';
 import DashboardPage from '../pages/app/Dashboard/DashboardPage';
 import CandidatesPage from '../pages/app/Candidates/CandidatesPage';
+import JobsPage from '../pages/app/Jobs/JobsPage';
+import ApplicationsPage from '../pages/app/Applications/ApplicationsPage';
+import JobApplicationsPage from '../pages/app/JobApplications/JobApplicationsPage';
+import InterviewsPage from '../pages/app/Interviews/InterviewsPage';
+import OffersPage from '../pages/app/Offers/OffersPage';
+import NotificationsPage from '../pages/app/Notifications/NotificationsPage';
+import AnalyticsPage from '../pages/app/Analytics/AnalyticsPage';
 import ModulePlaceholder from '../components/common/ModulePlaceholder';
 import FoundationDemo from '../components/foundation/FoundationDemo';
 
@@ -67,31 +74,18 @@ export const AppRouter = () => {
           >
             <Route path={ROUTES.APP} element={<Navigate to={ROUTES.DASHBOARD} replace />} />
             <Route path={ROUTES.DASHBOARD} element={<DashboardPage />} />
-            <Route
-              path={ROUTES.JOBS}
-              element={<ModulePlaceholder moduleNameKey="nav.jobs" moduleNameFallback="Jobs" />}
-            />
+            <Route path={ROUTES.JOBS} element={<JobsPage />} />
             <Route path={ROUTES.CANDIDATES} element={<CandidatesPage />} />
-            <Route
-              path={ROUTES.APPLICATIONS}
-              element={<ModulePlaceholder moduleNameKey="nav.applications" moduleNameFallback="Applications" />}
-            />
-            <Route
-              path={ROUTES.INTERVIEWS}
-              element={<ModulePlaceholder moduleNameKey="nav.interviews" moduleNameFallback="Interviews" />}
-            />
-            <Route
-              path={ROUTES.OFFERS}
-              element={<ModulePlaceholder moduleNameKey="nav.offers" moduleNameFallback="Offers" />}
-            />
+            <Route path={ROUTES.APPLICATIONS} element={<ApplicationsPage />} />
+            <Route path={ROUTES.JOB_APPLICATIONS} element={<JobApplicationsPage />} />
+            <Route path={ROUTES.INTERVIEWS} element={<InterviewsPage />} />
+            <Route path={ROUTES.OFFERS} element={<OffersPage />} />
+            <Route path={ROUTES.NOTIFICATIONS} element={<NotificationsPage />} />
             <Route
               path={ROUTES.TALENT_POOLS}
               element={<ModulePlaceholder moduleNameKey="nav.talentPools" moduleNameFallback="Talent Pools" />}
             />
-            <Route
-              path={ROUTES.ANALYTICS}
-              element={<ModulePlaceholder moduleNameKey="nav.analytics" moduleNameFallback="Analytics" />}
-            />
+            <Route path={ROUTES.ANALYTICS} element={<AnalyticsPage />} />
             <Route
               path={ROUTES.BILLING}
               element={<ModulePlaceholder moduleNameKey="nav.billing" moduleNameFallback="Billing" />}

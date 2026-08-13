@@ -2,6 +2,7 @@ import React, { useEffect } from 'react';
 import { Outlet } from 'react-router-dom';
 import { useSidebar } from '../hooks/useSidebar';
 import { useResponsive } from '../hooks/useResponsive';
+import { useCompany } from '../hooks/useCompany';
 import Topbar from './Topbar';
 import Sidebar from './Sidebar';
 import MainContent from './MainContent';
@@ -11,6 +12,12 @@ import './Layouts.css';
 export const AppLayout = ({ children }) => {
   const { isCollapsed, setSidebarCollapsed } = useSidebar();
   const { isTablet, isMobile } = useResponsive();
+  const { loadCompanyProfile } = useCompany();
+
+  // Load authoritative Company Profile from backend once application shell is initialized
+  useEffect(() => {
+    loadCompanyProfile();
+  }, [loadCompanyProfile]);
 
   // Auto-collapse sidebar on tablet viewports
   useEffect(() => {

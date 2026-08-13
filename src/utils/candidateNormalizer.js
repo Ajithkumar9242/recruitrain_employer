@@ -1,7 +1,7 @@
 /**
  * RecruitTrain Candidate Domain Normalizer
  * Pure, deterministic data transformation layer for Frappe Candidate entities.
- * STRICT COMPLIANCE: Zero random generators, zero fake IDs, zero derived recruitment lifecycle state.
+ * STRICT COMPLIANCE: Zero synthetic ID generation, zero fake fallback objects, zero client-calculated business logic.
  */
 
 /**
@@ -25,11 +25,15 @@ export const cleanChildRow = (row) => {
 /**
  * Normalize single Candidate profile payload from Frappe backend
  * @param {Object} raw - Raw candidate object or message envelope
- * @returns {Object} Normalized Candidate profile
+ * @returns {Object|null} Normalized Candidate profile
  */
 export const normalizeCandidate = (raw) => {
   if (!raw) return null;
   const d = raw.data || raw.message || raw;
+  if (!d || typeof d !== 'object') return null;
+
+  const id = String(d.name || d.candidate_id || d.id || '');
+  if (!id) return null;
 
   const firstName = d.first_name || '';
   const middleName = d.middle_name || '';
@@ -38,8 +42,7 @@ export const normalizeCandidate = (raw) => {
     d.full_name ||
     [firstName, middleName, lastName].filter(Boolean).join(' ') ||
     d.candidate_name ||
-    d.name ||
-    '';
+    id;
 
   const city = d.city || '';
   const state = d.state || '';
@@ -49,9 +52,9 @@ export const normalizeCandidate = (raw) => {
     d.location_display || (locationParts.length > 0 ? locationParts.join(', ') : d.preferred_location || '');
 
   return {
-    id: d.name || d.candidate_id,
-    name: d.name || d.candidate_id,
-    candidateId: d.candidate_id || d.name,
+    id,
+    name: id,
+    candidateId: id,
     candidateName: d.candidate_name || fullName,
     company: d.company || '',
     firstName,
@@ -95,7 +98,7 @@ export const normalizeCandidate = (raw) => {
     status: d.status || 'Active',
     source: d.source || '',
     resume: d.resume || null,
-    profileCompletion: Number(d.profile_completion || 0),
+    profileCompletion: Number(d.profile_completion ?? d.completeness ?? 0),
 
     // Passport & Visa
     passportNumber: d.passport_number || '',
@@ -105,8 +108,8 @@ export const normalizeCandidate = (raw) => {
     isInternational: Boolean(d.is_international),
 
     // Timestamps
-    creation: d.creation || null,
-    modified: d.modified || null,
+    creation: d.creation || d.created_at || null,
+    modified: d.modified || d.modified_at || null,
 
     // Child table arrays
     education: Array.isArray(d.education) ? d.education.map(cleanChildRow) : [],
@@ -120,7 +123,7 @@ export const normalizeCandidate = (raw) => {
 
 /**
  * Normalize paginated list of Candidates from backend
- * @param {Object} rawEnvelope - Raw response from list_candidates
+ * @param {Object} rawEnvelope - Raw response from list_candidates, search_candidates, list_domestic_candidates, list_international_candidates
  * @returns {Object} Normalized paginated candidate list payload
  */
 export const normalizeCandidateList = (rawEnvelope) => {
@@ -128,24 +131,27 @@ export const normalizeCandidateList = (rawEnvelope) => {
     return { items: [], total: 0, page: 1, pageSize: 10, totalPages: 0 };
   }
 
-  const itemsRaw = rawEnvelope.items || rawEnvelope.data || [];
-  const items = Array.isArray(itemsRaw) ? itemsRaw.map(normalizeCandidate) : [];
+  const payload = rawEnvelope.data || rawEnvelope.message || rawEnvelope;
+  const itemsRaw = Array.isArray(payload)
+    ? payload
+    : (payload.items || payload.data || []);
 
-  const pagination = rawEnvelope.pagination || rawEnvelope.meta || {};
+  const items = Array.isArray(itemsRaw) ? itemsRaw.map(normalizeCandidate).filter(Boolean) : [];
 
-  // AUDIT: Do NOT use items.length as a fallback for total.
-  // If the backend doesn't return total, keep it at 0 so the UI does not
-  // falsely calculate pagination from an incomplete page of results.
+  const meta = payload.meta || payload.pagination || rawEnvelope.meta || rawEnvelope.pagination || {};
+
+  // STRICT RULE: Total must come directly from backend metadata.
+  // Do NOT fall back to items.length.
   const total = Number(
-    rawEnvelope.total ?? pagination.total ?? 0
+    payload.total ?? rawEnvelope.total ?? meta.total ?? 0
   );
-  const page = Number(rawEnvelope.page ?? pagination.page ?? 1);
-  const pageSize = Number(rawEnvelope.page_size ?? pagination.page_size ?? 10);
+  const page = Number(payload.page ?? rawEnvelope.page ?? meta.page ?? 1);
+  const pageSize = Number(
+    payload.page_size ?? rawEnvelope.page_size ?? meta.page_size ?? meta.pageSize ?? 10
+  );
 
-  // totalPages: use backend value if provided, otherwise derive from total.
-  // This is a safe display-only computation, not a business rule.
   const totalPages = Number(
-    rawEnvelope.total_pages ?? pagination.total_pages ?? (total > 0 ? Math.ceil(total / (pageSize || 10)) : 0)
+    payload.total_pages ?? rawEnvelope.total_pages ?? meta.total_pages ?? meta.totalPages ?? (total > 0 ? Math.ceil(total / (pageSize || 10)) : 0)
   );
 
   return {
@@ -156,3 +162,26 @@ export const normalizeCandidateList = (rawEnvelope) => {
     totalPages,
   };
 };
+
+/**
+ * Normalize profile completeness score from backend
+ * @param {Object} rawEnvelope - Raw response from get_profile_completeness
+ * @returns {Object} Normalized profile completeness object
+ */
+export const normalizeProfileCompleteness = (rawEnvelope) => {
+  if (!rawEnvelope) return { score: 0, completeness: 0, fields: {} };
+  const d = rawEnvelope.data || rawEnvelope.message || rawEnvelope;
+  if (typeof d === 'number') {
+    return { score: Number(d) || 0, completeness: Number(d) || 0, fields: {} };
+  }
+  if (typeof d === 'object' && d !== null) {
+    return {
+      score: Number(d.score ?? d.completeness ?? d.percentage ?? d.profile_completion ?? 0),
+      completeness: Number(d.completeness ?? d.score ?? d.percentage ?? d.profile_completion ?? 0),
+      fields: d.fields || d.details || {},
+      missingFields: d.missing_fields || d.missingFields || [],
+    };
+  }
+  return { score: 0, completeness: 0, fields: {} };
+};
+

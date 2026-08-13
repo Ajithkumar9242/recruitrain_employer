@@ -1,0 +1,395 @@
+/* RecruitTrain Analytics Module Styling */
+
+.analytics-page-container {
+  padding: 24px;
+  max-width: 1600px;
+  margin: 0 auto;
+}
+
+.analytics-header-section {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 24px;
+  flex-wrap: wrap;
+  gap: 16px;
+}
+
+.analytics-title {
+  margin-bottom: 4px !important;
+  font-weight: 700 !important;
+  color: var(--text-primary, #1e293b);
+}
+
+.analytics-subtitle {
+  color: var(--text-secondary, #64748b);
+  font-size: 0.95rem;
+}
+
+/* Filter Bar */
+.analytics-filter-bar {
+  background: var(--bg-surface, #ffffff);
+  border: 1px solid var(--border-color, #e2e8f0);
+  border-radius: 12px;
+  padding: 16px 20px;
+  margin-bottom: 24px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 16px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+
+.analytics-filter-space {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.analytics-filter-item {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.analytics-filter-label {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--text-secondary, #64748b);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  display: flex;
+  align-items: center;
+}
+
+.analytics-date-picker,
+.analytics-select {
+  border-radius: 6px;
+}
+
+/* KPI Card */
+.analytics-kpi-card {
+  background: var(--bg-surface, #ffffff);
+  border: 1px solid var(--border-color, #e2e8f0);
+  border-radius: 12px;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  height: 100%;
+}
+
+.analytics-kpi-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+}
+
+.analytics-kpi-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.analytics-kpi-title-wrap {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.analytics-kpi-title {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--text-secondary, #64748b);
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.analytics-kpi-info-icon {
+  color: var(--text-secondary, #94a3b8);
+  cursor: pointer;
+}
+
+.analytics-kpi-icon-wrap {
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.analytics-kpi-value {
+  margin: 0 !important;
+  font-weight: 700 !important;
+  line-height: 1.1 !important;
+  color: var(--text-primary, #0f172a);
+}
+
+.analytics-kpi-subtitle {
+  font-size: 0.8rem;
+  margin-top: 4px;
+}
+
+/* Generic Analytics Card */
+.analytics-card {
+  background: var(--bg-surface, #ffffff);
+  border: 1px solid var(--border-color, #e2e8f0);
+  border-radius: 12px;
+  height: 100%;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+
+.analytics-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 20px;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.analytics-card-title {
+  margin-bottom: 2px !important;
+  font-weight: 600 !important;
+  font-size: 1.1rem !important;
+}
+
+.analytics-card-sub {
+  font-size: 0.85rem;
+}
+
+.analytics-total-tag {
+  font-weight: 600;
+  border-radius: 6px;
+  padding: 2px 10px;
+}
+
+/* Funnel Styling */
+.funnel-container {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.funnel-stage-item {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.funnel-stage-meta {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.funnel-stage-name-wrap {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.funnel-stage-bullet {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  display: inline-block;
+}
+
+.funnel-stage-name {
+  font-size: 0.9rem;
+}
+
+.funnel-stage-values {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.funnel-stage-count {
+  font-size: 0.95rem;
+}
+
+.funnel-rate-badge {
+  font-weight: 600;
+  border-radius: 4px;
+}
+
+/* Trends Chart Styling */
+.trends-chart-container {
+  padding-top: 16px;
+}
+
+.trends-bar-chart {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  height: 220px;
+  gap: 12px;
+  padding-bottom: 24px;
+  border-bottom: 1px solid var(--border-color, #e2e8f0);
+}
+
+.trends-bar-col {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  height: 100%;
+  justify-content: flex-end;
+}
+
+.trends-bar-wrapper {
+  width: 100%;
+  max-width: 44px;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  align-items: center;
+  position: relative;
+}
+
+.trends-bar-value {
+  font-size: 0.75rem;
+  font-weight: 600;
+  margin-bottom: 4px;
+  color: var(--text-secondary, #64748b);
+}
+
+.trends-bar-fill {
+  width: 100%;
+  background: linear-gradient(180deg, var(--brand-teal, #0d9488) 0%, #14b8a6 100%);
+  border-radius: 6px 6px 0 0;
+  transition: height 0.4s ease;
+  min-height: 4px;
+}
+
+.trends-bar-fill:hover {
+  opacity: 0.85;
+}
+
+.trends-bar-label {
+  font-size: 0.75rem;
+  color: var(--text-secondary, #64748b);
+  margin-top: 8px;
+  white-space: nowrap;
+}
+
+/* Job Metrics Box & Table */
+.job-stat-box {
+  background: var(--bg-subtle, #f8fafc);
+  border: 1px solid var(--border-color, #e2e8f0);
+  border-radius: 8px;
+  padding: 12px 16px;
+}
+
+/* Application & Interview Distribution */
+.metrics-box {
+  background: var(--bg-subtle, #f8fafc);
+  border: 1px solid var(--border-color, #e2e8f0);
+  border-radius: 8px;
+  padding: 16px;
+  height: 100%;
+}
+
+.metrics-box-title {
+  margin-bottom: 12px !important;
+  font-size: 0.9rem !important;
+  color: var(--text-secondary, #475569);
+}
+
+.distribution-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.distribution-item {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.distribution-meta {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.82rem;
+}
+
+.distribution-label {
+  color: var(--text-secondary, #64748b);
+}
+
+.distribution-val {
+  font-size: 0.85rem;
+}
+
+/* Offer KPI Highlights */
+.offer-kpi-highlight {
+  background: var(--bg-subtle, #f8fafc);
+  border: 1px solid var(--border-color, #e2e8f0);
+  border-radius: 8px;
+  padding: 16px;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+/* Time to Hire Box */
+.time-to-hire-box {
+  background: var(--bg-subtle, #f8fafc);
+  border: 1px solid var(--border-color, #e2e8f0);
+  border-radius: 8px;
+  padding: 16px;
+  text-align: center;
+}
+
+.time-to-hire-box.main {
+  background: color-mix(in srgb, var(--brand-teal, #0d9488) 8%, transparent);
+  border-color: color-mix(in srgb, var(--brand-teal, #0d9488) 30%, transparent);
+}
+
+/* Animations */
+.spin-icon {
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
+/* Dark Mode Overrides */
+[data-theme='dark'] .analytics-filter-bar,
+[data-theme='dark'] .analytics-kpi-card,
+[data-theme='dark'] .analytics-card {
+  background: #1e293b;
+  border-color: #334155;
+}
+
+[data-theme='dark'] .analytics-title {
+  color: #f8fafc;
+}
+
+[data-theme='dark'] .analytics-subtitle,
+[data-theme='dark'] .analytics-filter-label,
+[data-theme='dark'] .analytics-kpi-title,
+[data-theme='dark'] .trends-bar-value,
+[data-theme='dark'] .trends-bar-label,
+[data-theme='dark'] .distribution-label {
+  color: #94a3b8;
+}
+
+[data-theme='dark'] .analytics-kpi-value {
+  color: #f8fafc;
+}
+
+[data-theme='dark'] .job-stat-box,
+[data-theme='dark'] .metrics-box,
+[data-theme='dark'] .offer-kpi-highlight,
+[data-theme='dark'] .time-to-hire-box {
+  background: #0f172a;
+  border-color: #334155;
+}

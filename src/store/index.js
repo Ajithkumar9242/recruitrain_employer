@@ -16,7 +16,13 @@ import uiReducer from './slices/uiSlice';
 import languageReducer from './slices/languageSlice';
 import notificationReducer from './slices/notificationSlice';
 import dashboardReducer from './slices/dashboardSlice';
+import jobReducer from './slices/jobSlice';
 import candidateReducer from './slices/candidateSlice';
+import jobApplicationReducer from './slices/jobApplicationSlice';
+import interviewReducer from './slices/interviewSlice';
+import offerReducer from './slices/offerSlice';
+import analyticsReducer from './slices/analyticsSlice';
+import companyReducer from './slices/companySlice';
 
 /**
  * Safely resolve Redux Persist storage adapter under Vite / ESM / CommonJS interop.
@@ -76,6 +82,12 @@ const rootReducer = combineReducers({
   notification: notificationReducer,
   dashboard: dashboardReducer,
   candidate: candidateReducer,
+  job: jobReducer,
+  jobApplication: jobApplicationReducer,
+  interview: interviewReducer,
+  offer: offerReducer,
+  analytics: analyticsReducer,
+  company: companyReducer,
 });
 
 const persistConfig = {
