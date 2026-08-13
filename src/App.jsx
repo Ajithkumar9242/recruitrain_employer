@@ -1,5 +1,5 @@
 import React from 'react';
-import { ConfigProvider } from 'antd';
+import { ConfigProvider, App as AntApp } from 'antd';
 import { useTheme } from './hooks/useTheme';
 import { lightTheme, darkTheme } from './config/theme';
 import ErrorBoundary from './components/common/ErrorBoundary';
@@ -11,9 +11,11 @@ export const App = () => {
 
   return (
     <ConfigProvider theme={isDarkMode ? darkTheme : lightTheme}>
-      <ErrorBoundary>
-        <AppRouter />
-      </ErrorBoundary>
+      <AntApp>
+        <ErrorBoundary>
+          <AppRouter />
+        </ErrorBoundary>
+      </AntApp>
     </ConfigProvider>
   );
 };

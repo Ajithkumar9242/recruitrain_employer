@@ -419,9 +419,9 @@ export const JobsPage = () => {
       {/* Page Header */}
       <PageHeader
         title={t('jobs.title')}
-        subtitle={t('jobs.subtitle')}
-        extra={
-          <Space>
+        description={t('jobs.subtitle')}
+        actions={
+          <Space wrap>
             <Button icon={<FiRefreshCw />} onClick={() => refreshJobs()} loading={loading}>
               {t('common.refresh')}
             </Button>

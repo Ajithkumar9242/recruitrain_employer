@@ -18,6 +18,42 @@ export const ERROR_CODES = {
   UNKNOWN: 'UNKNOWN',
 };
 
+const extractBackendMessage = (data) => {
+  if (!data) return null;
+  if (typeof data === 'string') return data;
+
+  if (data._server_messages) {
+    try {
+      const parsedArray = typeof data._server_messages === 'string'
+        ? JSON.parse(data._server_messages)
+        : data._server_messages;
+      if (Array.isArray(parsedArray) && parsedArray.length > 0) {
+        const firstMsg = typeof parsedArray[0] === 'string' ? JSON.parse(parsedArray[0]) : parsedArray[0];
+        if (firstMsg?.message) return firstMsg.message;
+      }
+    } catch (e) {
+      // Fallback if parsing fails
+    }
+  }
+
+  if (data.message) {
+    if (typeof data.message === 'string') return data.message;
+    if (typeof data.message === 'object') {
+      return data.message.message || data.message.error || data.message.detail || null;
+    }
+  }
+
+  if (data.error) {
+    if (typeof data.error === 'string') return data.error;
+    if (typeof data.error === 'object') {
+      return data.error.message || data.error.detail || null;
+    }
+  }
+
+  if (data.detail && typeof data.detail === 'string') return data.detail;
+  return null;
+};
+
 export const normalizeApiError = (error) => {
   if (!error) {
     return {
@@ -48,7 +84,7 @@ export const normalizeApiError = (error) => {
   }
 
   const { status, data } = error.response;
-  const backendMessage = data?.message || data?.error || data?.detail;
+  const backendMessage = extractBackendMessage(data);
 
   switch (status) {
     case 400:
@@ -83,8 +119,8 @@ export const normalizeApiError = (error) => {
       return {
         status: 409,
         code: ERROR_CODES.CONFLICT,
-        message: backendMessage || 'A data conflict occurred. Resource may already exist.',
-        details: null,
+        message: backendMessage || 'This interview cannot be deleted because it is referenced by linked records.',
+        details: data?.errors || data || null,
       };
     case 422:
       return {
@@ -104,7 +140,7 @@ export const normalizeApiError = (error) => {
       return {
         status: 500,
         code: ERROR_CODES.SERVER_ERROR,
-        message: 'A backend server error occurred. Our engineers have been notified.',
+        message: backendMessage || 'A backend server error occurred. Our engineers have been notified.',
         details: null,
       };
     case 503:

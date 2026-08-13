@@ -21,8 +21,6 @@ import {
   FiCalendar,
   FiFileText,
   FiDownload,
-  FiCheckCircle,
-  FiXCircle,
   FiTrash2,
   FiExternalLink,
   FiClock,
@@ -39,7 +37,9 @@ const { Text, Title, Paragraph } = Typography;
 const { Option } = Select;
 
 export const JobApplicationDetailsDrawer = ({
+  open,
   visible,
+  applicationId,
   application,
   loading,
   saving,
@@ -47,6 +47,7 @@ export const JobApplicationDetailsDrawer = ({
   changingStatus,
   changingStage,
   onClose,
+  onEdit,
   onChangeStatus,
   onChangeStage,
   onDelete,
@@ -54,45 +55,40 @@ export const JobApplicationDetailsDrawer = ({
   const { t } = useLanguage();
   const navigate = useNavigate();
 
-  const [selectedNextStatus, setSelectedNextStatus] = useState(null);
   const [selectedNextStage, setSelectedNextStage] = useState(null);
   const [rejectionReason, setRejectionReason] = useState('');
 
-  if (!application && !loading) {
+  const isOpen = open !== undefined ? open : visible;
+  const currentId = applicationId || application?.applicationId || application?.id || application?.name || application?.application_id;
+  const hasId = Boolean(currentId);
+  const isLoading = Boolean(loading) || (hasId && !application);
+
+  if (!application) {
     return (
-      <Drawer open={visible} onClose={onClose} width={600} title={t('jobApplications.drawer.title')}>
-        <Text type="secondary">{t('jobApplications.drawer.noData')}</Text>
+      <Drawer open={isOpen} onClose={onClose} width={640} title={t('jobApplications.drawer.title', 'Job Application Details')}>
+        {isLoading ? (
+          <div style={{ textAlign: 'center', padding: '64px 0' }}>
+            <Spin tip="Loading application details..." />
+          </div>
+        ) : (
+          <Text type="secondary">{t('jobApplications.drawer.noData', 'No application selected.')}</Text>
+        )}
       </Drawer>
     );
   }
 
-  const handleStatusSubmit = async () => {
-    if (!selectedNextStatus) return;
-    await onChangeStatus(
-      application.id,
-      selectedNextStatus,
-      selectedNextStatus === 'Rejected' ? rejectionReason : null
-    );
-    setSelectedNextStatus(null);
-    setRejectionReason('');
-  };
-
   const handleStageSubmit = async () => {
-    if (!selectedNextStage || !onChangeStage) return;
-    await onChangeStage(application.id, selectedNextStage);
+    if (!selectedNextStage) return;
+    const stageHandler = onChangeStage || onChangeStatus;
+    if (stageHandler) {
+      await stageHandler(
+        application.id,
+        selectedNextStage,
+        selectedNextStage === 'Rejected' ? rejectionReason : null
+      );
+    }
     setSelectedNextStage(null);
-  };
-
-  const handleQuickShortlist = async () => {
-    await onChangeStatus(application.id, 'Shortlisted');
-  };
-
-  const handleQuickReject = async () => {
-    await onChangeStatus(
-      application.id,
-      'Rejected',
-      rejectionReason || t('jobApplications.messages.defaultRejectReason')
-    );
+    setRejectionReason('');
   };
 
   const handleNavigateCandidate = () => {
@@ -105,7 +101,7 @@ export const JobApplicationDetailsDrawer = ({
 
   return (
     <Drawer
-      open={visible}
+      open={isOpen}
       onClose={onClose}
       width={640}
       title={
@@ -117,21 +113,28 @@ export const JobApplicationDetailsDrawer = ({
         </Space>
       }
       extra={
-        <Popconfirm
-          title={t('jobApplications.messages.deleteConfirmTitle')}
-          description={t('jobApplications.messages.deleteConfirmSub')}
-          onConfirm={() => onDelete(application?.id)}
-          okText={t('common.confirm')}
-          cancelText={t('common.cancel')}
-          okButtonProps={{ danger: true }}
-        >
-          <Button type="primary" danger icon={<FiTrash2 />} loading={deleting}>
-            {t('common.delete')}
-          </Button>
-        </Popconfirm>
+        <Space>
+          {onEdit && (
+            <Button icon={<FiFileText />} onClick={() => onEdit(application)}>
+              {t('common.edit', 'Edit')}
+            </Button>
+          )}
+          <Popconfirm
+            title={t('jobApplications.messages.deleteConfirmTitle')}
+            description={t('jobApplications.messages.deleteConfirmSub')}
+            onConfirm={() => onDelete(application?.id)}
+            okText={t('common.confirm')}
+            cancelText={t('common.cancel')}
+            okButtonProps={{ danger: true }}
+          >
+            <Button type="primary" danger icon={<FiTrash2 />} loading={deleting}>
+              {t('common.delete')}
+            </Button>
+          </Popconfirm>
+        </Space>
       }
     >
-      <Spin spinning={Boolean(loading)}>
+      <Spin spinning={Boolean(isLoading)}>
         {application && (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
             {/* Overview Header Card */}
@@ -234,95 +237,46 @@ export const JobApplicationDetailsDrawer = ({
 
             <Divider style={{ margin: '4px 0' }} />
 
-            {/* Status & Pipeline Stage Transition Actions */}
-            <Card title={t('jobApplications.drawer.changeStatusTitle')} size="small" style={{ borderRadius: '8px' }}>
+            {/* Single Pipeline Stage Transition Control */}
+            <Card title={t('jobApplications.drawer.updateStage', 'Current Stage')} size="small" style={{ borderRadius: '8px' }}>
               <Space direction="vertical" style={{ width: '100%' }}>
                 <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
                   <Select
-                    placeholder={t('jobApplications.drawer.selectNextStatus')}
+                    placeholder={t('jobApplications.drawer.selectNextStage', 'Select recruitment stage')}
                     style={{ flex: 1, minWidth: 200 }}
-                    value={selectedNextStatus}
-                    onChange={(val) => setSelectedNextStatus(val)}
+                    value={selectedNextStage || application.currentStage || application.status || 'Applied'}
+                    onChange={(val) => setSelectedNextStage(val)}
                   >
-                    <Option value="Applied">{t('jobApplications.statuses.Applied')}</Option>
-                    <Option value="Screening">{t('jobApplications.statuses.Screening')}</Option>
-                    <Option value="Shortlisted">{t('jobApplications.statuses.Shortlisted')}</Option>
-                    <Option value="Interview Scheduled">{t('jobApplications.statuses.Interview Scheduled')}</Option>
-                    <Option value="Interviewed">{t('jobApplications.statuses.Interviewed')}</Option>
-                    <Option value="Offer Extended">{t('jobApplications.statuses.Offer Extended')}</Option>
-                    <Option value="Hired">{t('jobApplications.statuses.Hired')}</Option>
-                    <Option value="Rejected">{t('jobApplications.statuses.Rejected')}</Option>
-                    <Option value="Withdrawn">{t('jobApplications.statuses.Withdrawn')}</Option>
+                    <Option value="Applied">Applied</Option>
+                    <Option value="Screening">Screening</Option>
+                    <Option value="Shortlisted">Shortlisted</Option>
+                    <Option value="Interview">Interview</Option>
+                    <Option value="Technical">Technical</Option>
+                    <Option value="HR">HR</Option>
+                    <Option value="Offered">Offered</Option>
+                    <Option value="Hired">Hired</Option>
+                    <Option value="Rejected">Rejected</Option>
+                    <Option value="Withdrawn">Withdrawn</Option>
                   </Select>
                   <Button
                     type="primary"
-                    onClick={handleStatusSubmit}
-                    disabled={!selectedNextStatus}
-                    loading={saving || changingStatus}
+                    onClick={handleStageSubmit}
+                    disabled={!selectedNextStage || selectedNextStage === (application.currentStage || application.status)}
+                    loading={saving || changingStage || changingStatus}
+                    icon={<FiLayers />}
                   >
-                    {t('jobApplications.drawer.updateStatus')}
+                    {t('jobApplications.drawer.updateStageBtn', 'Update Stage')}
                   </Button>
                 </div>
 
-                {selectedNextStatus === 'Rejected' && (
+                {selectedNextStage === 'Rejected' && (
                   <Input.TextArea
                     rows={2}
-                    placeholder={t('jobApplications.drawer.rejectionReasonPlaceholder')}
+                    placeholder={t('jobApplications.drawer.rejectionReasonPlaceholder', 'Enter rejection reason...')}
                     value={rejectionReason}
                     onChange={(e) => setRejectionReason(e.target.value)}
                   />
                 )}
-
-                {/* Stage Transition Control */}
-                {onChangeStage && (
-                  <div style={{ display: 'flex', gap: '8px', marginTop: 8, flexWrap: 'wrap' }}>
-                    <Select
-                      placeholder={t('jobApplications.drawer.selectNextStage', 'Select recruitment stage')}
-                      style={{ flex: 1, minWidth: 200 }}
-                      value={selectedNextStage}
-                      onChange={(val) => setSelectedNextStage(val)}
-                    >
-                      <Option value="Applied">Applied</Option>
-                      <Option value="Screening">Screening</Option>
-                      <Option value="Assessment">Assessment</Option>
-                      <Option value="Technical Interview">Technical Interview</Option>
-                      <Option value="HR Interview">HR Interview</Option>
-                      <Option value="Management Round">Management Round</Option>
-                      <Option value="Offer Stage">Offer Stage</Option>
-                      <Option value="Hired">Hired</Option>
-                      <Option value="Rejected">Rejected</Option>
-                    </Select>
-                    <Button
-                      onClick={handleStageSubmit}
-                      disabled={!selectedNextStage}
-                      loading={saving || changingStage}
-                      icon={<FiLayers />}
-                    >
-                      {t('jobApplications.drawer.updateStage', 'Update Stage')}
-                    </Button>
-                  </div>
-                )}
-
-                <div style={{ display: 'flex', gap: '8px', marginTop: 8 }}>
-                  <Button
-                    icon={<FiCheckCircle />}
-                    style={{ color: '#52c41a', borderColor: '#52c41a' }}
-                    onClick={handleQuickShortlist}
-                    loading={saving}
-                    disabled={application.status === 'Shortlisted'}
-                  >
-                    {t('jobApplications.actions.shortlist')}
-                  </Button>
-                  <Button
-                    danger
-                    icon={<FiXCircle />}
-                    onClick={handleQuickReject}
-                    loading={saving}
-                    disabled={application.status === 'Rejected'}
-                  >
-                    {t('jobApplications.actions.reject')}
-                  </Button>
-                </div>
               </Space>
             </Card>
 

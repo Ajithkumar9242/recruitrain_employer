@@ -76,63 +76,63 @@ export const useCandidates = () => {
 
   const getCandidateDetails = useCallback(
     (candidateId) => {
-      return dispatch(fetchCandidateByIdThunk(candidateId));
+      return dispatch(fetchCandidateByIdThunk(candidateId)).unwrap();
     },
     [dispatch]
   );
 
   const getProfileCompleteness = useCallback(
     (candidateId) => {
-      return dispatch(fetchProfileCompletenessThunk(candidateId));
+      return dispatch(fetchProfileCompletenessThunk(candidateId)).unwrap();
     },
     [dispatch]
   );
 
   const createCandidate = useCallback(
     (data) => {
-      return dispatch(createCandidateThunk(data));
+      return dispatch(createCandidateThunk(data)).unwrap();
     },
     [dispatch]
   );
 
   const updateCandidate = useCallback(
     (candidateId, data) => {
-      return dispatch(updateCandidateThunk({ candidateId, data }));
+      return dispatch(updateCandidateThunk({ candidateId, data })).unwrap();
     },
     [dispatch]
   );
 
   const deleteCandidate = useCallback(
     (candidateId) => {
-      return dispatch(deleteCandidateThunk(candidateId));
+      return dispatch(deleteCandidateThunk(candidateId)).unwrap();
     },
     [dispatch]
   );
 
   const updateSkills = useCallback(
     (candidateId, skills) => {
-      return dispatch(updateCandidateSkillsThunk({ candidateId, skills }));
+      return dispatch(updateCandidateSkillsThunk({ candidateId, skills })).unwrap();
     },
     [dispatch]
   );
 
   const updateEducation = useCallback(
     (candidateId, education) => {
-      return dispatch(updateCandidateEducationThunk({ candidateId, education }));
+      return dispatch(updateCandidateEducationThunk({ candidateId, education })).unwrap();
     },
     [dispatch]
   );
 
   const updateExperience = useCallback(
     (candidateId, experience) => {
-      return dispatch(updateCandidateExperienceThunk({ candidateId, experience }));
+      return dispatch(updateCandidateExperienceThunk({ candidateId, experience })).unwrap();
     },
     [dispatch]
   );
 
   const saveSubresource = useCallback(
     (candidateId, resourceType, items) => {
-      return dispatch(saveSubresourceThunk({ candidateId, resourceType, items }));
+      return dispatch(saveSubresourceThunk({ candidateId, resourceType, items })).unwrap();
     },
     [dispatch]
   );

@@ -29,7 +29,12 @@ export const cleanChildRow = (row) => {
  */
 export const normalizeCandidate = (raw) => {
   if (!raw) return null;
-  const d = raw.data || raw.message || raw;
+  let d = raw;
+  if (d.message?.data) d = d.message.data;
+  else if (d.data?.data) d = d.data.data;
+  else if (d.data) d = d.data;
+  else if (d.message) d = d.message;
+
   if (!d || typeof d !== 'object') return null;
 
   const id = String(d.name || d.candidate_id || d.id || '');
@@ -131,7 +136,10 @@ export const normalizeCandidateList = (rawEnvelope) => {
     return { items: [], total: 0, page: 1, pageSize: 10, totalPages: 0 };
   }
 
-  const payload = rawEnvelope.data || rawEnvelope.message || rawEnvelope;
+  let payload = rawEnvelope;
+  if (payload.message?.data) payload = payload.message;
+  else if (payload.data?.data) payload = payload.data;
+
   const itemsRaw = Array.isArray(payload)
     ? payload
     : (payload.items || payload.data || []);
@@ -141,7 +149,6 @@ export const normalizeCandidateList = (rawEnvelope) => {
   const meta = payload.meta || payload.pagination || rawEnvelope.meta || rawEnvelope.pagination || {};
 
   // STRICT RULE: Total must come directly from backend metadata.
-  // Do NOT fall back to items.length.
   const total = Number(
     payload.total ?? rawEnvelope.total ?? meta.total ?? 0
   );

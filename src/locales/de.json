@@ -33,6 +33,11 @@
     "search": "Suchen...",
     "filter": "Filtern",
     "actions": "Aktionen",
+    "edit": "Bearbeiten",
+    "delete": "Löschen",
+    "view": "Ansehen",
+    "viewDetails": "Details anzeigen",
+    "reset": "Zurücksetzen",
     "noData": "Keine Daten verfügbar"
   },
   "auth": {
@@ -283,7 +288,15 @@
       "degreeCertificate": "Abschlusszeugnis",
       "other": "Sonstiges",
       "fileUrl": "Datei-Anhang URL",
-      "fileUrlPlaceholder": "/files/dokument.pdf"
+      "fileUrlPlaceholder": "/files/dokument.pdf",
+      "alternateMobile": "Alternative Mobilnummer",
+      "candidateNameHint": "Kandidatenname wird automatisch aus Vorname + Zweitname + Nachname generiert."
+    },
+    "placeholders": {
+      "selectProfession": "Berufsfeld auswählen",
+      "selectEmploymentType": "Anstellungsart auswählen",
+      "selectCountry": "Land auswählen",
+      "selectNationality": "Staatsangehörigkeit auswählen"
     },
     "validation": {
       "firstNameRequired": "Vorname ist erforderlich",
@@ -294,7 +307,11 @@
       "dobRequired": "Geburtsdatum ist erforderlich",
       "addressRequired": "Adresse Zeile 1 ist erforderlich",
       "cityRequired": "Stadt ist erforderlich",
-      "stateRequired": "Bundesland ist erforderlich"
+      "stateRequired": "Bundesland ist erforderlich",
+      "professionRequired": "Bitte wählen Sie ein Berufsfeld aus",
+      "employmentTypeRequired": "Bitte wählen Sie eine Anstellungsart aus",
+      "countryRequired": "Bitte wählen Sie ein Land aus",
+      "nationalityRequired": "Bitte wählen Sie eine Staatsangehörigkeit aus"
     },
     "empty": {
       "noCandidates": "Keine Kandidaten gefunden, die den Suchkriterien entsprechen.",
@@ -315,8 +332,14 @@
       "subresourceSuccess": "Unterressource erfolgreich aktualisiert.",
       "conflictError": "Dieser Datensatz wurde von einer anderen Sitzung geändert. Bitte aktualisieren und erneut versuchen.",
       "resumeUploadError": "Lebenslauf-Datei konnte nicht hochgeladen werden.",
-      "subresourceError": "{{type}} konnte nicht aktualisiert werden.",
-      "validationError": "Validierungsfehler beim Übermitteln des Kandidatenprofils."
+      "subresourceError": "Fehler beim Aktualisieren von {{type}}.",
+      "invalidFileType": "Ungültiges Dateiformat. Erlaubte Formate: PDF, DOC, DOCX.",
+      "fileTooLarge": "Dateigröße überschreitet das zulässige Limit.",
+      "locationWarning": "Bundesland und Stadt stimmen möglicherweise nicht mit dem ausgewählten Land überein.",
+      "validationError": "Validierungsfehler beim Übermitteln des Kandidatenprofils.",
+      "loadingProfessions": "Berufsfelder werden geladen...",
+      "noProfessionsAvailable": "Keine Berufsfelder verfügbar",
+      "professionsLoadError": "Berufsfelder konnten nicht geladen werden. Bitte versuchen Sie es erneut."
     }
   },
   "jobs": {
@@ -408,6 +431,13 @@
         "targetJoiningDate": "Ziel-Eintrittsdatum",
         "minimumExperience": "Mindesterfahrung (Jahre)",
         "maximumExperience": "Maximalerfahrung (Jahre)",
+        "compensationType": "Vergütungsart",
+        "salaryRange": "Gehaltsspanne",
+        "collectiveAgreement": "Tarifvertrag",
+        "minimumAnnualSalary": "Mindestjahresgehalt",
+        "maximumAnnualSalary": "Maximales Jahresgehalt",
+        "tariffGroup": "Tarifgruppe",
+        "entgeltgruppe": "Entgeltgruppe",
         "currency": "Währung",
         "minimumSalary": "Mindestgehalt",
         "maximumSalary": "Maximalgehalt",

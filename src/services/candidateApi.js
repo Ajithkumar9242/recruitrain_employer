@@ -116,10 +116,30 @@ export const candidateApi = {
    * @returns {Promise<Object>} Backend response envelope
    */
   async updateCandidate(candidateId, data) {
+    const {
+      candidate_id,
+      id,
+      company,
+      full_name,
+      email,
+      location_display,
+      is_international,
+      latest_application,
+      creation,
+      modified,
+      modified_by,
+      owner,
+      phone,
+      mobile_number,
+      location,
+      salary,
+      total_experience_years,
+      ...updateFields
+    } = data || {};
+
     const payload = {
-      candidate_id: candidateId,
       name: candidateId,
-      ...data,
+      ...updateFields,
     };
     const response = await apiClient.post('/method/recruitrain_employer.api.candidate.update_candidate', payload);
     return response;

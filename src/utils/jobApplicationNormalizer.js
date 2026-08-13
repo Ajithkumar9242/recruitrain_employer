@@ -30,10 +30,21 @@ export const cleanChildRow = (row) => {
  */
 export const normalizeJobApplication = (raw) => {
   if (!raw) return null;
-  const d = raw.data || raw.message || raw;
+
+  // Iteratively unpack nested Frappe response envelopes (message.data, data.data, message, data)
+  let d = raw;
+  if (d && typeof d === 'object' && d.message && typeof d.message === 'object') {
+    d = d.message;
+  }
+  if (d && typeof d === 'object' && d.data && typeof d.data === 'object') {
+    d = d.data;
+  }
+  if (d && typeof d === 'object' && d.data && typeof d.data === 'object') {
+    d = d.data;
+  }
   if (!d || typeof d !== 'object') return null;
 
-  const id = String(d.name || d.application_id || '');
+  const id = String(d.name || d.application_id || d.id || '');
   if (!id) return null;
 
   const candidateId = d.candidate || d.candidate_id || '';
@@ -45,8 +56,8 @@ export const normalizeJobApplication = (raw) => {
   const jobCode = d.job_code || '';
   const department = d.department || '';
 
-  const status = d.status || 'Applied';
-  const currentStage = d.current_stage || d.stage || status;
+  const status = d.status || 'Open';
+  const currentStage = d.current_stage || d.stage || 'Applied';
   const appliedOn = d.applied_on || d.application_date || d.creation || null;
 
   const timelineRaw = Array.isArray(d.timeline)
@@ -59,6 +70,7 @@ export const normalizeJobApplication = (raw) => {
     id,
     name: id,
     applicationId: id,
+    application_id: id,
 
     // Candidate Relationship (authoritative link data only)
     candidate: candidateId,
@@ -89,8 +101,10 @@ export const normalizeJobApplication = (raw) => {
     resume: d.resume || null,
     rejectionReason: d.rejection_reason || '',
     company: d.company || '',
-    recruiter: d.recruiter || '',
-    recruiterName: d.recruiter_name || '',
+    recruiter: d.assigned_recruiter || d.recruiter || '',
+    assignedRecruiter: d.assigned_recruiter || d.recruiter || '',
+    recruiterName: d.recruiter_name || d.assigned_recruiter_name || '',
+    rating: d.rating !== undefined && d.rating !== null ? Number(d.rating) : 0,
 
     // Timeline / History (authoritative array from backend or empty)
     timeline: timelineRaw.map(cleanChildRow),

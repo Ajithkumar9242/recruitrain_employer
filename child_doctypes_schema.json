@@ -1,0 +1,252 @@
+{
+  "Candidate Education": [
+    {
+      "fieldname": "section_break_vrwg",
+      "label": null,
+      "fieldtype": "Section Break",
+      "reqd": 0,
+      "options": null
+    },
+    {
+      "fieldname": "institution",
+      "label": "Institution",
+      "fieldtype": "Data",
+      "reqd": 1,
+      "options": null
+    },
+    {
+      "fieldname": "degree",
+      "label": "Degree",
+      "fieldtype": "Data",
+      "reqd": 1,
+      "options": null
+    },
+    {
+      "fieldname": "specialization",
+      "label": "Specialization",
+      "fieldtype": "Data",
+      "reqd": 0,
+      "options": null
+    },
+    {
+      "fieldname": "start_date",
+      "label": "Start Date",
+      "fieldtype": "Date",
+      "reqd": 0,
+      "options": null
+    },
+    {
+      "fieldname": "end_date",
+      "label": "End Date",
+      "fieldtype": "Data",
+      "reqd": 0,
+      "options": null
+    },
+    {
+      "fieldname": "percentage__cgpa",
+      "label": "Percentage / CGPA",
+      "fieldtype": "Data",
+      "reqd": 0,
+      "options": null
+    }
+  ],
+  "Candidate Experience": [
+    {
+      "fieldname": "section_break_cxcq",
+      "label": null,
+      "fieldtype": "Section Break",
+      "reqd": 0,
+      "options": null
+    },
+    {
+      "fieldname": "company",
+      "label": "Company",
+      "fieldtype": "Data",
+      "reqd": 1,
+      "options": null
+    },
+    {
+      "fieldname": "designation",
+      "label": "Designation",
+      "fieldtype": "Data",
+      "reqd": 1,
+      "options": null
+    },
+    {
+      "fieldname": "employment_type",
+      "label": "Employment Type",
+      "fieldtype": "Link",
+      "reqd": 0,
+      "options": "Employment Type"
+    },
+    {
+      "fieldname": "start_date",
+      "label": "Start Date",
+      "fieldtype": "Date",
+      "reqd": 1,
+      "options": null
+    },
+    {
+      "fieldname": "end_date",
+      "label": "End Date",
+      "fieldtype": "Date",
+      "reqd": 0,
+      "options": null
+    },
+    {
+      "fieldname": "current_company",
+      "label": "Current Company",
+      "fieldtype": "Check",
+      "reqd": 0,
+      "options": null
+    },
+    {
+      "fieldname": "responsibilities",
+      "label": "Responsibilities",
+      "fieldtype": "Small Text",
+      "reqd": 0,
+      "options": null
+    }
+  ],
+  "Candidate Skill": [
+    {
+      "fieldname": "section_break_5oiv",
+      "label": null,
+      "fieldtype": "Section Break",
+      "reqd": 0,
+      "options": null
+    },
+    {
+      "fieldname": "skill",
+      "label": "Skill",
+      "fieldtype": "Link",
+      "reqd": 1,
+      "options": "Skill"
+    },
+    {
+      "fieldname": "experience_years",
+      "label": "Experience (Years)",
+      "fieldtype": "Float",
+      "reqd": 0,
+      "options": null
+    },
+    {
+      "fieldname": "proficiency",
+      "label": "Proficiency",
+      "fieldtype": "Select",
+      "reqd": 0,
+      "options": "Beginner\nIntermediate\nAdvanced\nExpert"
+    }
+  ],
+  "Candidate Language": [
+    {
+      "fieldname": "section_break_jann",
+      "label": null,
+      "fieldtype": "Section Break",
+      "reqd": 0,
+      "options": null
+    },
+    {
+      "fieldname": "language",
+      "label": "Language",
+      "fieldtype": "Data",
+      "reqd": 0,
+      "options": null
+    },
+    {
+      "fieldname": "reading",
+      "label": "Reading",
+      "fieldtype": "Check",
+      "reqd": 0,
+      "options": null
+    },
+    {
+      "fieldname": "writing",
+      "label": "Writing",
+      "fieldtype": "Check",
+      "reqd": 0,
+      "options": null
+    },
+    {
+      "fieldname": "speaking",
+      "label": "Speaking",
+      "fieldtype": "Check",
+      "reqd": 0,
+      "options": null
+    }
+  ],
+  "Candidate Certification": [
+    {
+      "fieldname": "section_break_6tlf",
+      "label": null,
+      "fieldtype": "Section Break",
+      "reqd": 0,
+      "options": null
+    },
+    {
+      "fieldname": "certification",
+      "label": "Certification",
+      "fieldtype": "Data",
+      "reqd": 0,
+      "options": null
+    },
+    {
+      "fieldname": "issued_by",
+      "label": "Issued By",
+      "fieldtype": "Data",
+      "reqd": 0,
+      "options": null
+    },
+    {
+      "fieldname": "issue_date",
+      "label": "Issue Date",
+      "fieldtype": "Date",
+      "reqd": 0,
+      "options": null
+    },
+    {
+      "fieldname": "expiry_date",
+      "label": "Expiry Date",
+      "fieldtype": "Date",
+      "reqd": 0,
+      "options": null
+    },
+    {
+      "fieldname": "credential_url",
+      "label": "Credential URL",
+      "fieldtype": "Data",
+      "reqd": 0,
+      "options": null
+    }
+  ],
+  "Candidate Document": [
+    {
+      "fieldname": "section_break_ygsh",
+      "label": null,
+      "fieldtype": "Section Break",
+      "reqd": 0,
+      "options": null
+    },
+    {
+      "fieldname": "document_type",
+      "label": "Document Type",
+      "fieldtype": "Select",
+      "reqd": 0,
+      "options": "Resume\nPassport\nVisa\nDriving License\nCertificate\nOther"
+    },
+    {
+      "fieldname": "file",
+      "label": "File",
+      "fieldtype": "Attach",
+      "reqd": 0,
+      "options": null
+    },
+    {
+      "fieldname": "verified",
+      "label": "Verified",
+      "fieldtype": "Check",
+      "reqd": 0,
+      "options": null
+    }
+  ]
+}

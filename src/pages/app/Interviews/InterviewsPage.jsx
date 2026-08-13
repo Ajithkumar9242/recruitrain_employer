@@ -35,6 +35,10 @@ import { useInterviews } from '../../../hooks/useInterviews';
 import { InterviewDetailsDrawer, getInterviewStatusTagColor, getInterviewTypeTagColor } from './InterviewDetailsDrawer';
 import { InterviewFormModal } from './InterviewFormModal';
 
+import candidateApi from '../../../services/candidateApi';
+import jobApi from '../../../services/jobApi';
+import jobApplicationApi from '../../../services/jobApplicationApi';
+
 const { Title, Text } = Typography;
 const { Option } = Select;
 
@@ -70,16 +74,220 @@ export const InterviewsPage = () => {
   } = useInterviews();
 
   const [drawerOpen, setDrawerOpen] = useState(false);
+  const [selectedInterviewId, setSelectedInterviewId] = useState(null);
   const [modalOpen, setModalOpen] = useState(false);
   const [editingInterview, setEditingInterview] = useState(null);
   const [searchInput, setSearchInput] = useState(search);
 
+  const [candidatesMap, setCandidatesMap] = useState({});
+  const [jobsMap, setJobsMap] = useState({});
+  const [applicationsMap, setApplicationsMap] = useState({});
+
   const debounceTimerRef = useRef(null);
+
+  const loadEntityMasters = useCallback(async () => {
+    try {
+      const [candRes, jobRes, appRes] = await Promise.all([
+        candidateApi.listCandidates({ pageSize: 100 }).catch(() => null),
+        jobApi.listJobs({ pageSize: 100 }).catch(() => null),
+        jobApplicationApi.listApplications({ pageSize: 100 }).catch(() => null),
+      ]);
+
+      const cMap = {};
+      const rawCands =
+        candRes?.data?.items ||
+        candRes?.items ||
+        candRes?.data ||
+        candRes?.message?.data ||
+        candRes?.message?.items ||
+        [];
+      if (Array.isArray(rawCands)) {
+        rawCands.forEach((c) => {
+          const cid = String(c.id || c.name || c.candidateId || '').trim();
+          if (cid) {
+            const mid = c.middle_name ? `${c.middle_name} ` : '';
+            const cName =
+              c.first_name || c.last_name
+                ? `${c.first_name || ''} ${mid}${c.last_name || ''}`.trim()
+                : c.candidateName || c.full_name || c.name;
+            const obj = { ...c, candidateName: cName };
+            cMap[cid] = obj;
+            if (!isNaN(Number(cid))) {
+              cMap[Number(cid)] = obj;
+            }
+          }
+        });
+      }
+      setCandidatesMap(cMap);
+
+      const jMap = {};
+      const rawJobs =
+        jobRes?.items ||
+        jobRes?.data?.items ||
+        jobRes?.data ||
+        jobRes?.message?.data ||
+        jobRes?.message?.items ||
+        [];
+      if (Array.isArray(rawJobs)) {
+        rawJobs.forEach((j) => {
+          const jid = String(j.id || j.name || j.jobOpeningId || '').trim();
+          if (jid) {
+            const jTitle = j.jobTitle || j.title || j.job_title || j.name;
+            const obj = { ...j, jobTitle: jTitle };
+            jMap[jid] = obj;
+            if (!isNaN(Number(jid))) {
+              jMap[Number(jid)] = obj;
+            }
+          }
+        });
+      }
+      setJobsMap(jMap);
+
+      const aMap = {};
+      const rawApps =
+        appRes?.items ||
+        appRes?.data?.items ||
+        appRes?.data ||
+        appRes?.message?.data ||
+        appRes?.message?.items ||
+        [];
+      if (Array.isArray(rawApps)) {
+        rawApps.forEach((a) => {
+          const aid = String(a.id || a.name || a.applicationId || '').trim();
+          if (aid) {
+            aMap[aid] = a;
+            if (!isNaN(Number(aid))) {
+              aMap[Number(aid)] = a;
+            }
+          }
+        });
+      }
+      setApplicationsMap(aMap);
+    } catch (err) {
+      console.error('Error loading entity masters for interviews:', err);
+    }
+  }, []);
+
+  const enrichInterview = useCallback(
+    (record) => {
+      if (!record) return null;
+
+      const appIdStr = String(
+        record.jobApplication || record.job_application || record.application_id || ''
+      ).trim();
+
+      const isMastersLoaded = Object.keys(applicationsMap).length > 0;
+      const appData = applicationsMap[appIdStr] || (appIdStr && applicationsMap[Number(appIdStr)]) || null;
+      const isStale = Boolean(appIdStr && isMastersLoaded && !appData);
+
+      let candId = '';
+      let candName = '';
+      let candEmail = '';
+      let candMobile = '';
+
+      let jobOpeningId = '';
+      let jobOpeningTitle = '';
+
+      let currentStage = '';
+      let applicationStatus = '';
+
+      if (isStale) {
+        candName = 'Candidate unavailable';
+        jobOpeningTitle = 'Job Opening unavailable';
+        currentStage = 'Unavailable';
+        applicationStatus = 'Unavailable';
+      } else if (appData) {
+        currentStage = appData.currentStage || appData.current_stage || '-';
+        applicationStatus = appData.status || appData.application_status || '-';
+
+        candId = String(
+          appData.candidate || appData.candidateId || record.candidate || record.candidateId || ''
+        ).trim();
+        const candData = candidatesMap[candId] || (candId && candidatesMap[Number(candId)]) || {};
+
+        if (candData.first_name || candData.last_name) {
+          const mid = candData.middle_name ? `${candData.middle_name} ` : '';
+          candName = `${candData.first_name || ''} ${mid}${candData.last_name || ''}`.trim();
+        } else {
+          candName =
+            candData.candidateName ||
+            candData.name ||
+            appData.candidateName ||
+            appData.candidate_name ||
+            record.candidateName ||
+            (candId ? candId : 'Candidate unavailable');
+        }
+        candEmail = candData.email || appData.candidateEmail || record.candidateEmail || '';
+        candMobile = candData.mobile_no || candData.mobile || candData.phone || record.candidateMobile || '';
+
+        jobOpeningId = String(
+          appData.jobOpening ||
+            appData.job_opening ||
+            appData.jobOpeningId ||
+            record.jobOpening ||
+            record.jobOpeningId ||
+            ''
+        ).trim();
+        const jobData = jobsMap[jobOpeningId] || (jobOpeningId && jobsMap[Number(jobOpeningId)]) || {};
+        jobOpeningTitle =
+          jobData.jobTitle ||
+          jobData.title ||
+          jobData.job_title ||
+          appData.jobOpeningTitle ||
+          appData.job_title ||
+          record.jobOpeningTitle ||
+          (jobOpeningId ? jobOpeningId : 'Job Opening unavailable');
+      } else {
+        candId = String(record.candidate || record.candidateId || '').trim();
+        const candData = candidatesMap[candId] || (candId && candidatesMap[Number(candId)]) || {};
+        candName = candData.candidateName || record.candidateName || (candId ? candId : 'Candidate unavailable');
+        candEmail = candData.email || record.candidateEmail || '';
+        candMobile = candData.mobile_no || candData.mobile || candData.phone || record.candidateMobile || '';
+
+        jobOpeningId = String(record.jobOpening || record.jobOpeningId || record.job_opening || '').trim();
+        const jobData = jobsMap[jobOpeningId] || (jobOpeningId && jobsMap[Number(jobOpeningId)]) || {};
+        jobOpeningTitle = jobData.jobTitle || jobData.title || record.jobOpeningTitle || (jobOpeningId ? jobOpeningId : 'Job Opening unavailable');
+      }
+
+      return {
+        ...record,
+        isStale,
+        resolvedCandidateId: candId,
+        resolvedCandidateName: candName,
+        resolvedCandidateEmail: candEmail,
+        resolvedCandidateMobile: candMobile,
+        resolvedJobOpeningId: jobOpeningId,
+        resolvedJobOpeningTitle: jobOpeningTitle,
+        resolvedJobApplicationId: appIdStr,
+        resolvedCurrentStage: currentStage,
+        resolvedApplicationStatus: applicationStatus,
+      };
+    },
+    [candidatesMap, jobsMap, applicationsMap]
+  );
+
+  // Action Handlers
+  const handleViewDetails = (record) => {
+    const interviewId = String(record?.interview_name || record?.interviewName || record?.name || record?.id || record || '');
+    if (!interviewId) return;
+
+    setSelectedInterviewId(interviewId);
+    setSelectedInterview(record);
+    setDrawerOpen(true);
+    getInterviewDetails(interviewId);
+  };
+
+  const handleCloseDrawer = () => {
+    setDrawerOpen(false);
+    setSelectedInterviewId(null);
+    clearSelectedInterview();
+  };
 
   // Initial load
   useEffect(() => {
     loadInterviews();
-  }, [loadInterviews]);
+    loadEntityMasters();
+  }, [loadInterviews, loadEntityMasters]);
 
   // Handle action status notifications
   useEffect(() => {
@@ -187,13 +395,6 @@ export const InterviewsPage = () => {
     loadInterviews({ page: newPagination.current, pageSize: newPagination.pageSize });
   };
 
-  // Action Handlers
-  const handleViewDetails = (record) => {
-    setSelectedInterview(record);
-    getInterviewDetails(record.id);
-    setDrawerOpen(true);
-  };
-
   const handleOpenScheduleModal = () => {
     setEditingInterview(null);
     setModalOpen(true);
@@ -220,9 +421,12 @@ export const InterviewsPage = () => {
     await deleteInterview(interviewId);
   };
 
+  const enrichedInterviews = Array.isArray(interviews) ? interviews.map(enrichInterview) : [];
+  const enrichedSelectedInterview = enrichInterview(selectedInterview);
+
   const columns = [
     {
-      title: t('interviews.table.id'),
+      title: t('interviews.table.id', 'Interview ID'),
       dataIndex: 'name',
       key: 'name',
       width: 140,
@@ -237,24 +441,88 @@ export const InterviewsPage = () => {
       ),
     },
     {
-      title: t('interviews.table.candidate'),
-      dataIndex: 'candidate',
+      title: t('interviews.table.candidate', 'Candidate'),
       key: 'candidate',
-      width: 150,
-      render: (text) => <Text copyable={{ text }}>{text || '-'}</Text>,
+      width: 180,
+      render: (_, record) => {
+        if (record.isStale || record.resolvedCandidateName === 'Candidate unavailable') {
+          return (
+            <Tooltip title="Linked job application no longer exists">
+              <Text type="secondary" style={{ fontStyle: 'italic', fontSize: '0.85rem' }}>
+                Candidate unavailable
+              </Text>
+            </Tooltip>
+          );
+        }
+        return (
+          <div>
+            <Text strong style={{ display: 'block' }}>
+              {record.resolvedCandidateName}
+            </Text>
+            {record.resolvedCandidateId && (
+              <Text type="secondary" style={{ fontSize: '0.75rem' }} copyable={{ text: record.resolvedCandidateId }}>
+                {record.resolvedCandidateId}
+              </Text>
+            )}
+          </div>
+        );
+      },
     },
     {
-      title: t('interviews.table.jobOpening'),
-      dataIndex: 'jobOpening',
+      title: t('interviews.table.jobApplication', 'Job Application'),
+      key: 'jobApplication',
+      width: 160,
+      render: (_, record) => {
+        const appId = record.resolvedJobApplicationId || record.jobApplication || record.job_application;
+        if (record.isStale) {
+          return (
+            <Tooltip title="Linked job application no longer exists">
+              <Text type="secondary" style={{ fontSize: '0.85rem' }}>
+                {appId ? `${appId} (unavailable)` : 'Unavailable'}
+              </Text>
+            </Tooltip>
+          );
+        }
+        return (
+          <Text copyable={{ text: appId }}>
+            {appId || '-'}
+          </Text>
+        );
+      },
+    },
+    {
+      title: t('interviews.table.jobOpening', 'Job Opening'),
       key: 'jobOpening',
-      width: 150,
-      render: (text) => <Text copyable={{ text }}>{text || '-'}</Text>,
+      width: 190,
+      render: (_, record) => {
+        if (record.isStale || record.resolvedJobOpeningTitle === 'Job Opening unavailable') {
+          return (
+            <Tooltip title="Linked job application no longer exists">
+              <Text type="secondary" style={{ fontStyle: 'italic', fontSize: '0.85rem' }}>
+                Job Opening unavailable
+              </Text>
+            </Tooltip>
+          );
+        }
+        return (
+          <div>
+            <Text strong style={{ display: 'block' }}>
+              {record.resolvedJobOpeningTitle}
+            </Text>
+            {record.resolvedJobOpeningId && (
+              <Text type="secondary" style={{ fontSize: '0.75rem' }} copyable={{ text: record.resolvedJobOpeningId }}>
+                {record.resolvedJobOpeningId}
+              </Text>
+            )}
+          </div>
+        );
+      },
     },
     {
-      title: t('interviews.table.type'),
+      title: t('interviews.table.type', 'Interview Type'),
       dataIndex: 'interviewType',
       key: 'interviewType',
-      width: 150,
+      width: 130,
       render: (type) => (
         <Tag color={getInterviewTypeTagColor(type)}>
           {t(`interviews.types.${type}`, type)}
@@ -262,10 +530,10 @@ export const InterviewsPage = () => {
       ),
     },
     {
-      title: t('interviews.table.scheduledOn'),
+      title: t('interviews.table.scheduledOn', 'Scheduled On'),
       dataIndex: 'scheduledOn',
       key: 'scheduledOn',
-      width: 170,
+      width: 160,
       render: (date) => (
         <Space size={4}>
           <FiCalendar style={{ color: 'var(--brand-teal)' }} />
@@ -274,25 +542,46 @@ export const InterviewsPage = () => {
       ),
     },
     {
-      title: t('interviews.table.duration'),
-      dataIndex: 'duration',
-      key: 'duration',
-      width: 110,
-      render: (mins) => (mins ? `${mins} m` : '-'),
-    },
-    {
-      title: t('interviews.table.interviewer'),
+      title: t('interviews.table.interviewer', 'Interviewer'),
       dataIndex: 'interviewer',
       key: 'interviewer',
-      width: 160,
+      width: 140,
       ellipsis: true,
       render: (text) => text || '-',
     },
     {
-      title: t('interviews.table.status'),
+      title: 'Recruiter',
+      dataIndex: 'recruiter',
+      key: 'recruiter',
+      width: 140,
+      ellipsis: true,
+      render: (text) => text || '-',
+    },
+    {
+      title: 'Result',
+      dataIndex: 'result',
+      key: 'result',
+      width: 100,
+      render: (res) => {
+        const colorMap = { Pass: 'success', Fail: 'error', Hold: 'warning', Pending: 'default' };
+        return <Tag color={colorMap[res] || 'default'}>{res || 'Pending'}</Tag>;
+      },
+    },
+    {
+      title: 'App Stage',
+      key: 'applicationStage',
+      width: 120,
+      render: (_, record) => (
+        <Tag color={record.isStale ? 'default' : 'geekblue'}>
+          {record.resolvedCurrentStage || '-'}
+        </Tag>
+      ),
+    },
+    {
+      title: t('interviews.table.status', 'Status'),
       dataIndex: 'status',
       key: 'status',
-      width: 140,
+      width: 130,
       render: (status) => (
         <Tag color={getInterviewStatusTagColor(status)}>
           {t(`interviews.statuses.${status}`, status)}
@@ -300,9 +589,9 @@ export const InterviewsPage = () => {
       ),
     },
     {
-      title: t('interviews.table.actions'),
+      title: t('interviews.table.actions', 'Actions'),
       key: 'actions',
-      width: 180,
+      width: 160,
       fixed: 'right',
       render: (_, record) => (
         <Space size="small">
@@ -444,9 +733,23 @@ export const InterviewsPage = () => {
       <Card style={{ borderRadius: '8px' }}>
         <Table
           columns={columns}
-          dataSource={interviews}
+          dataSource={enrichedInterviews}
           rowKey="id"
           loading={loading}
+          onRow={(record) => ({
+            onClick: (e) => {
+              if (
+                e.target.closest('button') ||
+                e.target.closest('a') ||
+                e.target.closest('.ant-popover') ||
+                e.target.closest('.ant-popconfirm')
+              ) {
+                return;
+              }
+              handleViewDetails(record);
+            },
+            style: { cursor: 'pointer' },
+          })}
           pagination={{
             current: pagination.page,
             pageSize: pagination.pageSize,
@@ -465,15 +768,14 @@ export const InterviewsPage = () => {
 
       {/* Interview Details Drawer */}
       <InterviewDetailsDrawer
+        open={drawerOpen}
         visible={drawerOpen}
-        interview={selectedInterview}
-        loading={loadingDetails}
+        interviewId={selectedInterviewId}
+        interview={enrichedSelectedInterview}
+        loading={loadingDetails || (loading && !selectedInterview)}
         saving={saving}
         deleting={deleting}
-        onClose={() => {
-          setDrawerOpen(false);
-          clearSelectedInterview();
-        }}
+        onClose={handleCloseDrawer}
         onChangeStatus={handleQuickStatusChange}
         onEdit={(record) => {
           setDrawerOpen(false);

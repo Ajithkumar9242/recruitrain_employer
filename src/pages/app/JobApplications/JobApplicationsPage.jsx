@@ -13,6 +13,7 @@ import {
   Popconfirm,
   message,
   Tooltip,
+  Radio,
 } from 'antd';
 import {
   FiPlus,
@@ -32,8 +33,12 @@ import PageHeader from '../../../components/common/PageHeader';
 import JobApplicationDetailsDrawer from './JobApplicationDetailsDrawer';
 import JobApplicationFormModal from './JobApplicationFormModal';
 import JobApplicationCard, { getStatusTagColor } from './JobApplicationCard';
+import RecruitmentKanban from '../../../components/kanban/RecruitmentKanban';
+import CandidateProfileDrawer from '../Candidates/CandidateProfileDrawer';
+
 import { useJobApplications } from '../../../hooks/useJobApplications';
 import { useLanguage } from '../../../hooks/useLanguage';
+import candidateApi from '../../../services/candidateApi';
 
 const { Text } = Typography;
 const { Option } = Select;
@@ -49,6 +54,7 @@ export const JobApplicationsPage = () => {
     sorting,
     search,
     loading,
+    loadingDetails,
     saving,
     deleting,
     changingStatus,
@@ -68,18 +74,38 @@ export const JobApplicationsPage = () => {
     resetFilters,
     setSorting,
     setPage,
-    setPageSize,
+    clearSelectedApplication,
     clearActionStatus,
     clearError,
   } = useJobApplications();
 
   // Local Component State
+  const [viewType, setViewType] = useState('table'); // 'table' | 'kanban'
   const [drawerVisible, setDrawerVisible] = useState(false);
+  const [selectedApplicationId, setSelectedApplicationId] = useState(null);
   const [formModalVisible, setFormModalVisible] = useState(false);
   const [editingApplication, setEditingApplication] = useState(null);
   const [searchTerm, setSearchTerm] = useState(search || '');
   const [isMobileView, setIsMobileView] = useState(window.innerWidth < 768);
   const searchDebounceRef = useRef(null);
+
+  // Candidate Drawer state
+  const [candidateDrawerVisible, setCandidateDrawerVisible] = useState(false);
+  const [candidateProfileData, setCandidateProfileData] = useState(null);
+  const [loadingCandidate, setLoadingCandidate] = useState(false);
+
+  // Canonical Identifier Normalizer for Job Application
+  const getAppId = (app) => {
+    if (!app) return '';
+    if (typeof app === 'string') return app;
+    return String(
+      app.applicationId ||
+      app.application_id ||
+      app.name ||
+      app.id ||
+      ''
+    );
+  };
 
   // Responsive Viewport Resize Listener
   useEffect(() => {
@@ -92,8 +118,10 @@ export const JobApplicationsPage = () => {
 
   // Initial & Reactive Data Loading
   useEffect(() => {
-    loadApplications();
-  }, [pagination.page, pagination.pageSize, filters, sorting, search]);
+    if (viewType === 'table') {
+      loadApplications();
+    }
+  }, [pagination.page, pagination.pageSize, filters, sorting, search, viewType]);
 
   // Cleanup debounce on unmount
   useEffect(() => {
@@ -153,6 +181,10 @@ export const JobApplicationsPage = () => {
   };
 
   // Filter Changes
+  const handleStageFilterChange = (val) => {
+    setFilters({ currentStage: val || null });
+  };
+
   const handleStatusFilterChange = (val) => {
     setFilters({ status: val || null });
   };
@@ -163,6 +195,11 @@ export const JobApplicationsPage = () => {
 
   const handleSourceFilterChange = (val) => {
     setFilters({ source: val || null });
+  };
+
+  const handleResetAllFilters = () => {
+    setSearchTerm('');
+    resetFilters();
   };
 
   // Server-Side Sort Change
@@ -188,10 +225,38 @@ export const JobApplicationsPage = () => {
     }
   };
 
-  // Drawer View
-  const handleViewDetails = (record) => {
-    getApplicationDetails(record.id);
+  // Drawer View Details Flow
+  const handleViewDetails = async (record) => {
+    const appId = getAppId(record);
+    if (!appId) return;
+
+    setSelectedApplicationId(appId);
     setDrawerVisible(true);
+
+    await getApplicationDetails(appId);
+  };
+
+  const handleCloseDrawer = () => {
+    setDrawerVisible(false);
+    setSelectedApplicationId(null);
+    clearSelectedApplication();
+  };
+
+  // View Candidate Profile Drawer
+  const handleViewCandidateProfile = async (candidateId) => {
+    if (!candidateId) return;
+    setLoadingCandidate(true);
+    setCandidateDrawerVisible(true);
+    try {
+      const res = await candidateApi.getCandidate(candidateId);
+      const data = res?.data || res?.message || res;
+      setCandidateProfileData(data);
+    } catch (err) {
+      message.error('Failed to load candidate profile');
+      setCandidateDrawerVisible(false);
+    } finally {
+      setLoadingCandidate(false);
+    }
   };
 
   // Modal Open Handlers
@@ -212,17 +277,21 @@ export const JobApplicationsPage = () => {
 
   // Quick Action Handlers
   const handleQuickStatusChange = async (applicationId, status) => {
-    await changeStatus(applicationId, status);
+    const appId = getAppId(applicationId);
+    await changeStatus(appId, status);
   };
 
   const handleDeleteClick = async (applicationId) => {
-    const res = await deleteApplication(applicationId);
-    if (!res.error && selectedApplication?.id === applicationId) {
-      setDrawerVisible(false);
+    const appId = getAppId(applicationId);
+    const res = await deleteApplication(appId);
+    if (!res.error) {
+      if (selectedApplicationId === appId || selectedApplication?.id === appId) {
+        handleCloseDrawer();
+      }
     }
   };
 
-  // Desktop Table Columns based on authoritative backend fields
+  // Desktop Table Columns
   const columns = [
     {
       title: t('jobApplications.table.id'),
@@ -247,7 +316,7 @@ export const JobApplicationsPage = () => {
       render: (text, record) => (
         <div>
           <div style={{ fontWeight: 600, color: 'var(--ink, #0f172a)' }}>
-            <a onClick={() => handleViewDetails(record)} style={{ color: 'inherit' }}>
+            <a onClick={() => handleViewCandidateProfile(record.candidate)} style={{ color: 'inherit' }}>
               {text || record.candidate}
             </a>
           </div>
@@ -328,7 +397,7 @@ export const JobApplicationsPage = () => {
       width: 150,
       render: (_, record) => (
         <Space size="small">
-          <Tooltip title={t('common.viewDetails')}>
+          <Tooltip title={t('common.viewDetails', 'View Details')}>
             <Button
               type="text"
               icon={<FiEye />}
@@ -336,18 +405,21 @@ export const JobApplicationsPage = () => {
             />
           </Tooltip>
 
-          {record.status !== 'Shortlisted' && record.status !== 'Hired' && (
-            <Tooltip title={t('jobApplications.actions.shortlist')}>
-              <Button
-                type="text"
-                icon={<FiCheckCircle style={{ color: '#52c41a' }} />}
-                onClick={() => handleQuickStatusChange(record.id, 'Shortlisted')}
-              />
-            </Tooltip>
-          )}
+          {record.status !== 'Shortlisted' &&
+            record.currentStage !== 'Shortlisted' &&
+            record.status !== 'Rejected' &&
+            record.currentStage !== 'Rejected' && (
+              <Tooltip title={t('jobApplications.actions.shortlist', 'Shortlist')}>
+                <Button
+                  type="text"
+                  icon={<FiCheckCircle style={{ color: '#52c41a' }} />}
+                  onClick={() => handleQuickStatusChange(record.id, 'Shortlisted')}
+                />
+              </Tooltip>
+            )}
 
-          {record.status !== 'Rejected' && (
-            <Tooltip title={t('jobApplications.actions.reject')}>
+          {record.status !== 'Rejected' && record.currentStage !== 'Rejected' && (
+            <Tooltip title={t('jobApplications.actions.reject', 'Reject')}>
               <Button
                 type="text"
                 icon={<FiXCircle style={{ color: '#ff4d4f' }} />}
@@ -360,11 +432,11 @@ export const JobApplicationsPage = () => {
             title={t('jobApplications.messages.deleteConfirmTitle')}
             description={t('jobApplications.messages.deleteConfirmSub')}
             onConfirm={() => handleDeleteClick(record.id)}
-            okText={t('common.confirm')}
-            cancelText={t('common.cancel')}
+            okText={t('common.confirm', 'Confirm')}
+            cancelText={t('common.cancel', 'Cancel')}
             okButtonProps={{ danger: true }}
           >
-            <Tooltip title={t('common.delete')}>
+            <Tooltip title={t('common.delete', 'Delete')}>
               <Button type="text" danger icon={<FiTrash2 />} />
             </Tooltip>
           </Popconfirm>
@@ -380,9 +452,21 @@ export const JobApplicationsPage = () => {
         title={t('jobApplications.title', 'Job Applications')}
         subtitle={t('jobApplications.subtitle', 'Backend-driven recruitment lifecycle and candidate pipeline tracking.')}
         extra={
-          <Space>
+          <Space wrap>
+            <Radio.Group
+              value={viewType}
+              onChange={(e) => setViewType(e.target.value)}
+              buttonStyle="solid"
+            >
+              <Radio.Button value="table">
+                <FiList style={{ marginRight: 4, verticalAlign: '-1px' }} /> Table
+              </Radio.Button>
+              <Radio.Button value="kanban">
+                <FiGrid style={{ marginRight: 4, verticalAlign: '-1px' }} /> Kanban
+              </Radio.Button>
+            </Radio.Group>
             <Button icon={<FiRefreshCw />} onClick={() => refreshApplications()} loading={loading}>
-              {t('common.refresh')}
+              {t('common.refresh', 'Refresh')}
             </Button>
             <Button
               type="primary"
@@ -390,141 +474,194 @@ export const JobApplicationsPage = () => {
               onClick={handleOpenCreateModal}
               style={{ backgroundColor: 'var(--brand-navy, #0f172a)', borderColor: 'var(--brand-navy, #0f172a)' }}
             >
-              {t('jobApplications.createApplication')}
+              {t('jobApplications.createApplication', 'New Application')}
             </Button>
           </Space>
         }
       />
 
-      {/* Toolbar with Search and Filters */}
-      <Card size="small" style={{ marginBottom: 24, borderRadius: '8px' }}>
-        <Row gutter={[16, 16]} align="middle">
-          <Col xs={24} sm={12} md={8}>
-            <Input.Search
-              placeholder={t('jobApplications.searchPlaceholder')}
-              allowClear
-              enterButton={<FiSearch />}
-              value={searchTerm}
-              onChange={handleSearchChange}
-              onSearch={handleSearchSubmit}
-            />
-          </Col>
-
-          <Col xs={12} sm={6} md={5}>
-            <Select
-              placeholder={t('jobApplications.filters.status')}
-              allowClear
-              style={{ width: '100%' }}
-              value={filters.status}
-              onChange={handleStatusFilterChange}
-            >
-              <Option value="Applied">{t('jobApplications.statuses.Applied')}</Option>
-              <Option value="Screening">{t('jobApplications.statuses.Screening')}</Option>
-              <Option value="Shortlisted">{t('jobApplications.statuses.Shortlisted')}</Option>
-              <Option value="Interview Scheduled">{t('jobApplications.statuses.Interview Scheduled')}</Option>
-              <Option value="Interviewed">{t('jobApplications.statuses.Interviewed')}</Option>
-              <Option value="Offer Extended">{t('jobApplications.statuses.Offer Extended')}</Option>
-              <Option value="Hired">{t('jobApplications.statuses.Hired')}</Option>
-              <Option value="Rejected">{t('jobApplications.statuses.Rejected')}</Option>
-              <Option value="Withdrawn">{t('jobApplications.statuses.Withdrawn')}</Option>
-            </Select>
-          </Col>
-
-          <Col xs={12} sm={6} md={4}>
-            <Select
-              placeholder={t('jobApplications.table.priority', 'Priority')}
-              allowClear
-              style={{ width: '100%' }}
-              value={filters.priority}
-              onChange={handlePriorityFilterChange}
-            >
-              <Option value="Low">Low</Option>
-              <Option value="Medium">Medium</Option>
-              <Option value="High">High</Option>
-            </Select>
-          </Col>
-
-          <Col xs={16} sm={8} md={4}>
-            <Select
-              placeholder={t('jobApplications.table.source', 'Source')}
-              allowClear
-              style={{ width: '100%' }}
-              value={filters.source}
-              onChange={handleSourceFilterChange}
-            >
-              <Option value="Direct">Direct Application</Option>
-              <Option value="LinkedIn">LinkedIn</Option>
-              <Option value="Career Portal">Career Portal</Option>
-              <Option value="Referral">Employee Referral</Option>
-              <Option value="Agency">Recruitment Agency</Option>
-              <Option value="Other">Other</Option>
-            </Select>
-          </Col>
-
-          <Col xs={8} sm={4} md={3} style={{ textAlign: 'right' }}>
-            <Button icon={<FiRotateCcw />} onClick={resetFilters}>
-              {t('jobApplications.filters.reset', 'Reset')}
-            </Button>
-          </Col>
-        </Row>
-      </Card>
-
-      {/* Main Content Area (Table or Cards for Mobile) */}
-      {isMobileView ? (
-        <div className="mobile-applications-list">
-          {items.length === 0 && !loading ? (
-            <Card style={{ textAlign: 'center', borderRadius: 8 }}>
-              <Text type="secondary">{t('jobApplications.empty.noApplications')}</Text>
-            </Card>
-          ) : (
-            items.map((app) => (
-              <JobApplicationCard
-                key={app.id}
-                application={app}
-                onViewDetails={handleViewDetails}
-                onQuickStatusChange={handleQuickStatusChange}
-                onDelete={handleDeleteClick}
-              />
-            ))
-          )}
-        </div>
+      {viewType === 'kanban' ? (
+        <RecruitmentKanban
+          onViewApplication={(app) => handleViewDetails(app)}
+          onViewCandidate={(candId) => handleViewCandidateProfile(candId)}
+        />
       ) : (
-        <Card size="small" style={{ borderRadius: '8px' }}>
-          <Table
-            columns={columns}
-            dataSource={items}
-            rowKey="id"
-            loading={loading}
-            onChange={handleTableChange}
-            pagination={{
-              current: pagination.page,
-              pageSize: pagination.pageSize,
-              total: pagination.total,
-              showSizeChanger: true,
-              pageSizeOptions: ['10', '20', '50', '100'],
-              showTotal: (tot, range) => `${range[0]}-${range[1]} of ${tot} applications`,
-            }}
-            locale={{
-              emptyText: t('jobApplications.empty.noApplications'),
-            }}
-            scroll={{ x: 900 }}
-          />
-        </Card>
+        <>
+          {/* Toolbar with Search and Filters */}
+          <Card size="small" style={{ marginBottom: 24, borderRadius: '8px' }}>
+            <Row gutter={[12, 12]} align="middle">
+              <Col xs={24} sm={12} md={6}>
+                <Input.Search
+                  placeholder={t('jobApplications.searchPlaceholder')}
+                  allowClear
+                  enterButton={<FiSearch />}
+                  value={searchTerm}
+                  onChange={handleSearchChange}
+                  onSearch={handleSearchSubmit}
+                />
+              </Col>
+
+              <Col xs={12} sm={6} md={4}>
+                <Select
+                  placeholder={t('jobApplications.table.currentStage', 'Stage')}
+                  allowClear
+                  style={{ width: '100%' }}
+                  value={filters.currentStage}
+                  onChange={handleStageFilterChange}
+                >
+                  <Option value="Applied">Applied</Option>
+                  <Option value="Screening">Screening</Option>
+                  <Option value="Shortlisted">Shortlisted</Option>
+                  <Option value="Interview">Interview</Option>
+                  <Option value="Technical">Technical</Option>
+                  <Option value="HR">HR</Option>
+                  <Option value="Offered">Offered</Option>
+                  <Option value="Hired">Hired</Option>
+                  <Option value="Rejected">Rejected</Option>
+                  <Option value="Withdrawn">Withdrawn</Option>
+                </Select>
+              </Col>
+
+              <Col xs={12} sm={6} md={4}>
+                <Select
+                  placeholder={t('jobApplications.filters.status', 'Status')}
+                  allowClear
+                  style={{ width: '100%' }}
+                  value={filters.status}
+                  onChange={handleStatusFilterChange}
+                >
+                  <Option value="Open">Open</Option>
+                  <Option value="Closed">Closed</Option>
+                  <Option value="Hired">Hired</Option>
+                  <Option value="Rejected">Rejected</Option>
+                </Select>
+              </Col>
+
+              <Col xs={12} sm={6} md={3}>
+                <Select
+                  placeholder={t('jobApplications.table.priority', 'Priority')}
+                  allowClear
+                  style={{ width: '100%' }}
+                  value={filters.priority}
+                  onChange={handlePriorityFilterChange}
+                >
+                  <Option value="Low">Low</Option>
+                  <Option value="Medium">Medium</Option>
+                  <Option value="High">High</Option>
+                  <Option value="Critical">Critical</Option>
+                </Select>
+              </Col>
+
+              <Col xs={12} sm={6} md={4}>
+                <Select
+                  placeholder={t('jobApplications.table.source', 'Source')}
+                  allowClear
+                  style={{ width: '100%' }}
+                  value={filters.source}
+                  onChange={handleSourceFilterChange}
+                >
+                  <Option value="Career Portal">Career Portal</Option>
+                  <Option value="LinkedIn">LinkedIn</Option>
+                  <Option value="Referral">Employee Referral</Option>
+                  <Option value="Naukri">Naukri</Option>
+                  <Option value="Foundit">Foundit</Option>
+                  <Option value="Direct">Direct</Option>
+                  <Option value="Agency">Agency</Option>
+                  <Option value="Other">Other</Option>
+                </Select>
+              </Col>
+
+              <Col xs={12} sm={6} md={3} style={{ textAlign: 'right' }}>
+                <Button icon={<FiRotateCcw />} onClick={handleResetAllFilters} style={{ width: '100%' }}>
+                  {t('jobApplications.filters.reset', 'Reset')}
+                </Button>
+              </Col>
+            </Row>
+          </Card>
+
+          {/* Main Content Area (Table or Cards for Mobile) */}
+          {isMobileView ? (
+            <div className="mobile-applications-list">
+              {items.length === 0 && !loading ? (
+                <Card style={{ textAlign: 'center', borderRadius: 8 }}>
+                  <Text type="secondary">{t('jobApplications.empty.noApplications')}</Text>
+                </Card>
+              ) : (
+                items.map((app) => (
+                  <JobApplicationCard
+                    key={app.id}
+                    application={app}
+                    onViewDetails={handleViewDetails}
+                    onQuickStatusChange={handleQuickStatusChange}
+                    onDelete={handleDeleteClick}
+                  />
+                ))
+              )}
+            </div>
+          ) : (
+            <Card size="small" style={{ borderRadius: '8px' }}>
+              <Table
+                columns={columns}
+                dataSource={items}
+                rowKey="id"
+                loading={loading}
+                onChange={handleTableChange}
+                onRow={(record) => ({
+                  onClick: (e) => {
+                    if (e.target.closest('button') || e.target.closest('a') || e.target.closest('.ant-popover')) {
+                      return;
+                    }
+                    handleViewDetails(record);
+                  },
+                  style: { cursor: 'pointer' },
+                })}
+                pagination={{
+                  current: pagination.page,
+                  pageSize: pagination.pageSize,
+                  total: pagination.total,
+                  showSizeChanger: true,
+                  pageSizeOptions: ['10', '20', '50', '100'],
+                  showTotal: (tot, range) => `${range[0]}-${range[1]} of ${tot} applications`,
+                }}
+                locale={{
+                  emptyText: t('jobApplications.empty.noApplications'),
+                }}
+                scroll={{ x: 900 }}
+              />
+            </Card>
+          )}
+        </>
       )}
 
       {/* Application Details Drawer */}
       <JobApplicationDetailsDrawer
+        open={drawerVisible}
         visible={drawerVisible}
+        applicationId={selectedApplicationId}
         application={selectedApplication}
-        loading={loading}
+        loading={loadingDetails || (loading && !selectedApplication)}
         saving={saving}
         deleting={deleting}
         changingStatus={changingStatus}
         changingStage={changingStage}
-        onClose={() => setDrawerVisible(false)}
+        onClose={handleCloseDrawer}
+        onEdit={(app) => {
+          setEditingApplication(app);
+          setFormModalVisible(true);
+        }}
         onChangeStatus={handleQuickStatusChange}
         onChangeStage={changeStage}
         onDelete={handleDeleteClick}
+      />
+
+      {/* Candidate Profile Drawer */}
+      <CandidateProfileDrawer
+        visible={candidateDrawerVisible}
+        candidate={candidateProfileData}
+        loading={loadingCandidate}
+        onClose={() => setCandidateDrawerVisible(false)}
+        onEdit={() => {}}
+        onDelete={() => {}}
       />
 
       {/* Application Create / Edit Modal */}

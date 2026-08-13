@@ -11,6 +11,7 @@ import {
   Popconfirm,
   Card,
   Spin,
+  Alert,
 } from 'antd';
 import {
   FiCalendar,
@@ -26,6 +27,7 @@ import {
   FiCheckCircle,
   FiXCircle,
   FiRefreshCw,
+  FiAlertCircle,
 } from 'react-icons/fi';
 import { useNavigate } from 'react-router-dom';
 import dayjs from 'dayjs';
@@ -70,7 +72,9 @@ export const getInterviewTypeTagColor = (type) => {
 };
 
 export const InterviewDetailsDrawer = ({
+  open,
   visible,
+  interviewId,
   interview,
   loading,
   saving,
@@ -85,10 +89,21 @@ export const InterviewDetailsDrawer = ({
 
   const [selectedNextStatus, setSelectedNextStatus] = useState(null);
 
-  if (!interview && !loading) {
+  const isOpen = open !== undefined ? open : visible;
+  const currentId = interviewId || interview?.interview_name || interview?.interviewName || interview?.name || interview?.id;
+  const hasId = Boolean(currentId);
+  const isLoading = Boolean(loading) || (hasId && !interview);
+
+  if (!interview) {
     return (
-      <Drawer open={visible} onClose={onClose} width={640} title={t('interviews.drawer.title')}>
-        <Text type="secondary">{t('interviews.drawer.noData')}</Text>
+      <Drawer open={isOpen} onClose={onClose} width={640} title={t('interviews.drawer.title', 'Interview Details')}>
+        {isLoading ? (
+          <div style={{ textAlign: 'center', padding: '64px 0' }}>
+            <Spin tip="Loading interview details..." />
+          </div>
+        ) : (
+          <Text type="secondary">{t('interviews.drawer.noData', 'No interview selected.')}</Text>
+        )}
       </Drawer>
     );
   }
@@ -159,73 +174,187 @@ export const InterviewDetailsDrawer = ({
       <Spin spinning={Boolean(loading)}>
         {interview && (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-            {/* Header Status Card */}
-            <Card size="small" style={{ borderRadius: '8px', background: 'var(--bg-subtle, #f8fafc)' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <div>
-                  <Text type="secondary" style={{ fontSize: '0.75rem', textTransform: 'uppercase' }}>
-                    {t('interviews.table.status')}
-                  </Text>
-                  <div style={{ marginTop: 4 }}>
-                    <Tag color={getInterviewStatusTagColor(interview.status)} style={{ fontSize: '0.9rem', padding: '4px 12px' }}>
-                      {t(`interviews.statuses.${interview.status}`, interview.status)}
-                    </Tag>
-                  </div>
-                </div>
-                <div>
-                  <Text type="secondary" style={{ fontSize: '0.75rem', textTransform: 'uppercase' }}>
-                    {t('interviews.table.type')}
-                  </Text>
-                  <div style={{ marginTop: 4 }}>
-                    <Tag color={getInterviewTypeTagColor(interview.interviewType)} style={{ fontSize: '0.9rem', padding: '4px 12px' }}>
-                      {t(`interviews.types.${interview.interviewType}`, interview.interviewType)}
-                    </Tag>
-                  </div>
-                </div>
-                <div>
-                  <Text type="secondary" style={{ fontSize: '0.75rem', textTransform: 'uppercase' }}>
-                    {t('interviews.table.duration')}
-                  </Text>
-                  <div style={{ marginTop: 4, fontWeight: 600 }}>
-                    {interview.duration ? `${interview.duration} mins` : '-'}
-                  </div>
-                </div>
-              </div>
-            </Card>
+            {/* Stale Application Banner */}
+            {interview.isStale && (
+              <Alert
+                type="warning"
+                showIcon
+                icon={<FiAlertCircle />}
+                style={{ borderRadius: '8px' }}
+                message="Linked Job Application no longer exists."
+                description={`This historical interview record is linked to application "${interview.resolvedJobApplicationId || interview.jobApplication}", which has been removed from the system.`}
+              />
+            )}
 
-            {/* Overview Section */}
-            <div>
-              <Title level={5} style={{ marginBottom: 8, display: 'flex', alignItems: 'center', gap: 6 }}>
-                <FiClock style={{ color: 'var(--brand-teal, #1890ff)' }} />
-                {t('interviews.drawer.overview')}
-              </Title>
-              <Descriptions column={2} bordered size="small">
-                <Descriptions.Item label={t('interviews.table.id')}>
+            {/* 1. INTERVIEW DETAILS */}
+            <Card title={t('interviews.drawer.interviewDetails', '1. Interview Details')} size="small" style={{ borderRadius: '8px', background: 'var(--bg-subtle, #f8fafc)' }}>
+              <Descriptions column={2} size="small" bordered>
+                <Descriptions.Item label={t('interviews.table.id', 'Interview ID')}>
                   <Text copyable={{ text: interview.name }}>{interview.name}</Text>
                 </Descriptions.Item>
-                <Descriptions.Item label={t('interviews.table.scheduledOn')}>
+                <Descriptions.Item label={t('interviews.table.type', 'Interview Type')}>
+                  <Tag color={getInterviewTypeTagColor(interview.interviewType)}>
+                    {t(`interviews.types.${interview.interviewType}`, interview.interviewType)}
+                  </Tag>
+                </Descriptions.Item>
+                <Descriptions.Item label={t('interviews.table.scheduledOn', 'Scheduled On')}>
                   <Text strong>
                     {interview.scheduledOn ? dayjs(interview.scheduledOn).format('YYYY-MM-DD HH:mm') : '-'}
                   </Text>
                 </Descriptions.Item>
-                <Descriptions.Item label={t('interviews.drawer.interviewer')} span={2}>
-                  {interview.interviewer || '-'}
+                <Descriptions.Item label={t('interviews.table.duration', 'Duration')}>
+                  {interview.duration ? `${interview.duration} mins` : '-'}
                 </Descriptions.Item>
-                {interview.recruiter && (
-                  <Descriptions.Item label={t('interviews.drawer.recruiter')} span={2}>
-                    {interview.recruiter}
+                <Descriptions.Item label={t('interviews.table.status', 'Interview Status')}>
+                  <Tag color={getInterviewStatusTagColor(interview.status)}>
+                    {t(`interviews.statuses.${interview.status}`, interview.status)}
+                  </Tag>
+                </Descriptions.Item>
+                <Descriptions.Item label={t('interviews.drawer.result', 'Result')}>
+                  <Tag color={interview.result === 'Pass' ? 'success' : interview.result === 'Fail' ? 'error' : interview.result === 'Hold' ? 'warning' : 'default'}>
+                    {interview.result || 'Pending'}
+                  </Tag>
+                </Descriptions.Item>
+              </Descriptions>
+            </Card>
+
+            {/* 2. JOB APPLICATION DETAILS */}
+            <Card title={t('interviews.drawer.applicationDetails', '2. Job Application Details')} size="small" style={{ borderRadius: '8px' }}>
+              <Descriptions column={2} size="small" bordered>
+                <Descriptions.Item label="Application ID">
+                  {interview.isStale ? (
+                    <Text type="secondary" style={{ fontStyle: 'italic' }}>
+                      {interview.resolvedJobApplicationId ? `${interview.resolvedJobApplicationId} (unavailable)` : 'Unavailable'}
+                    </Text>
+                  ) : (
+                    <Text strong copyable={{ text: interview.resolvedJobApplicationId || interview.jobApplication }}>
+                      {interview.resolvedJobApplicationId || interview.jobApplication || '-'}
+                    </Text>
+                  )}
+                </Descriptions.Item>
+                <Descriptions.Item label="Current Stage">
+                  <Tag color={interview.isStale ? 'default' : 'geekblue'}>
+                    {interview.resolvedCurrentStage || 'Unavailable'}
+                  </Tag>
+                </Descriptions.Item>
+                <Descriptions.Item label="Application Status" span={2}>
+                  <Tag color={interview.isStale ? 'default' : 'blue'}>
+                    {interview.resolvedApplicationStatus || 'Open'}
+                  </Tag>
+                </Descriptions.Item>
+              </Descriptions>
+              {!interview.isStale && interview.resolvedJobApplicationId && (
+                <div style={{ marginTop: 8, textAlign: 'right' }}>
+                  <Button type="link" icon={<FiExternalLink />} onClick={handleNavigateApp} style={{ padding: 0 }}>
+                    {t('interviews.drawer.viewApp', 'View Application Details')}
+                  </Button>
+                </div>
+              )}
+            </Card>
+
+            {/* 3. CANDIDATE DETAILS */}
+            <Card title={t('interviews.drawer.candidateDetails', '3. Candidate Details')} size="small" style={{ borderRadius: '8px' }}>
+              <Descriptions column={2} size="small" bordered>
+                <Descriptions.Item label="Candidate Name">
+                  <Text
+                    strong
+                    style={{
+                      fontStyle: interview.isStale ? 'italic' : 'normal',
+                      color: interview.isStale ? 'var(--text-secondary, #64748b)' : 'inherit',
+                    }}
+                  >
+                    {interview.resolvedCandidateName || 'Candidate unavailable'}
+                  </Text>
+                </Descriptions.Item>
+                <Descriptions.Item label="Candidate ID">
+                  {interview.resolvedCandidateId ? (
+                    <Text copyable={{ text: interview.resolvedCandidateId }}>
+                      {interview.resolvedCandidateId}
+                    </Text>
+                  ) : (
+                    <Text type="secondary">-</Text>
+                  )}
+                </Descriptions.Item>
+                {interview.resolvedCandidateEmail && (
+                  <Descriptions.Item label="Email" span={2}>
+                    <Text copyable={{ text: interview.resolvedCandidateEmail }}>{interview.resolvedCandidateEmail}</Text>
                   </Descriptions.Item>
                 )}
-                {interview.location && (
-                  <Descriptions.Item label={t('interviews.drawer.location')} span={2}>
+                {interview.resolvedCandidateMobile && (
+                  <Descriptions.Item label="Mobile" span={2}>
+                    {interview.resolvedCandidateMobile}
+                  </Descriptions.Item>
+                )}
+              </Descriptions>
+              {!interview.isStale && interview.resolvedCandidateId && (
+                <div style={{ marginTop: 8, textAlign: 'right' }}>
+                  <Button type="link" icon={<FiExternalLink />} onClick={handleNavigateCandidate} style={{ padding: 0 }}>
+                    {t('interviews.drawer.viewCandidate', 'View Candidate Profile')}
+                  </Button>
+                </div>
+              )}
+            </Card>
+
+            {/* 4. JOB OPENING DETAILS */}
+            <Card title={t('interviews.drawer.jobDetails', '4. Job Opening Details')} size="small" style={{ borderRadius: '8px' }}>
+              <Descriptions column={2} size="small" bordered>
+                <Descriptions.Item label="Job Title" span={2}>
+                  <Text
+                    strong
+                    style={{
+                      fontStyle: interview.isStale ? 'italic' : 'normal',
+                      color: interview.isStale ? 'var(--text-secondary, #64748b)' : 'inherit',
+                    }}
+                  >
+                    {interview.resolvedJobOpeningTitle || 'Job Opening unavailable'}
+                  </Text>
+                </Descriptions.Item>
+                <Descriptions.Item label="Job Opening ID" span={2}>
+                  {interview.resolvedJobOpeningId ? (
+                    <Text copyable={{ text: interview.resolvedJobOpeningId }}>
+                      {interview.resolvedJobOpeningId}
+                    </Text>
+                  ) : (
+                    <Text type="secondary">-</Text>
+                  )}
+                </Descriptions.Item>
+              </Descriptions>
+              {!interview.isStale && interview.resolvedJobOpeningId && (
+                <div style={{ marginTop: 8, textAlign: 'right' }}>
+                  <Button type="link" icon={<FiExternalLink />} onClick={handleNavigateJob} style={{ padding: 0 }}>
+                    {t('interviews.drawer.viewJob', 'View Job Opening')}
+                  </Button>
+                </div>
+              )}
+            </Card>
+
+            {/* 5. ASSIGNMENT DETAILS */}
+            <Card title={t('interviews.drawer.assignmentDetails', '5. Assignment')} size="small" style={{ borderRadius: '8px' }}>
+              <Descriptions column={2} size="small" bordered>
+                <Descriptions.Item label={t('interviews.drawer.interviewer', 'Interviewer')}>
+                  {interview.interviewer || '-'}
+                </Descriptions.Item>
+                <Descriptions.Item label={t('interviews.drawer.recruiter', 'Recruiter')}>
+                  {interview.recruiter || '-'}
+                </Descriptions.Item>
+              </Descriptions>
+            </Card>
+
+            {/* 6. MEETING & LOCATION DETAILS */}
+            <Card title={t('interviews.drawer.meetingDetails', '6. Meeting & Location')} size="small" style={{ borderRadius: '8px' }}>
+              <Descriptions column={2} size="small" bordered>
+                <Descriptions.Item label={t('interviews.drawer.location', 'Location')} span={interview.meetingLink ? 1 : 2}>
+                  {interview.location ? (
                     <Space size={4}>
                       <FiMapPin style={{ color: 'var(--brand-teal)' }} />
                       <span>{interview.location}</span>
                     </Space>
-                  </Descriptions.Item>
-                )}
+                  ) : (
+                    '-'
+                  )}
+                </Descriptions.Item>
                 {interview.meetingLink && (
-                  <Descriptions.Item label={t('interviews.drawer.meetingLink')} span={2}>
+                  <Descriptions.Item label={t('interviews.drawer.meetingLink', 'Meeting Link')}>
                     <Button
                       type="primary"
                       ghost
@@ -235,83 +364,46 @@ export const InterviewDetailsDrawer = ({
                       target="_blank"
                       rel="noopener noreferrer"
                     >
-                      {t('dashboard.meetingLink')}
+                      {t('dashboard.meetingLink', 'Join Meeting')}
                     </Button>
                   </Descriptions.Item>
                 )}
               </Descriptions>
-            </div>
+            </Card>
+
+            {/* 7. REMARKS SECTION */}
+            <Card title={t('interviews.drawer.remarks', '7. Remarks')} size="small" style={{ borderRadius: '8px' }}>
+              <Paragraph
+                style={{
+                  background: 'var(--bg-subtle, #f8fafc)',
+                  padding: 12,
+                  borderRadius: 6,
+                  margin: 0,
+                  whiteSpace: 'pre-wrap',
+                  color: interview.remarks ? 'inherit' : 'var(--text-secondary, #94a3b8)',
+                  fontStyle: interview.remarks ? 'normal' : 'italic',
+                }}
+              >
+                {interview.remarks || 'No remarks'}
+              </Paragraph>
+            </Card>
 
             <Divider style={{ margin: '4px 0' }} />
 
-            {/* Authoritative Domain Relationships (Candidate, Job Opening, Job Application) */}
-            <div>
-              <Title level={5} style={{ marginBottom: 12, display: 'flex', alignItems: 'center', gap: 6 }}>
-                <FiTag style={{ color: 'var(--brand-teal, #1890ff)' }} />
-                Linked Entities
-              </Title>
-
-              <Descriptions column={1} bordered size="small">
-                <Descriptions.Item label={t('interviews.drawer.candidateRef')}>
-                  <Space style={{ width: '100%', justifyContent: 'space-between' }}>
-                    <Space>
-                      <FiUser style={{ color: 'var(--brand-teal)' }} />
-                      <Text strong copyable={{ text: interview.candidate }}>
-                        {interview.candidate}
-                      </Text>
-                    </Space>
-                    <Button type="link" icon={<FiExternalLink />} onClick={handleNavigateCandidate} style={{ padding: 0 }}>
-                      {t('interviews.drawer.viewCandidate')}
-                    </Button>
-                  </Space>
-                </Descriptions.Item>
-
-                <Descriptions.Item label={t('interviews.drawer.jobOpeningRef')}>
-                  <Space style={{ width: '100%', justifyContent: 'space-between' }}>
-                    <Space>
-                      <FiBriefcase style={{ color: 'var(--brand-teal)' }} />
-                      <Text strong copyable={{ text: interview.jobOpening }}>
-                        {interview.jobOpening}
-                      </Text>
-                    </Space>
-                    <Button type="link" icon={<FiExternalLink />} onClick={handleNavigateJob} style={{ padding: 0 }}>
-                      {t('interviews.drawer.viewJob')}
-                    </Button>
-                  </Space>
-                </Descriptions.Item>
-
-                <Descriptions.Item label={t('interviews.drawer.jobAppRef')}>
-                  <Space style={{ width: '100%', justifyContent: 'space-between' }}>
-                    <Space>
-                      <FiFileText style={{ color: 'var(--brand-teal)' }} />
-                      <Text strong copyable={{ text: interview.jobApplication }}>
-                        {interview.jobApplication}
-                      </Text>
-                    </Space>
-                    <Button type="link" icon={<FiExternalLink />} onClick={handleNavigateApp} style={{ padding: 0 }}>
-                      {t('interviews.drawer.viewApp')}
-                    </Button>
-                  </Space>
-                </Descriptions.Item>
-              </Descriptions>
-            </div>
-
-            <Divider style={{ margin: '4px 0' }} />
-
-            {/* Status Transition Card */}
-            <Card title={t('interviews.drawer.changeStatusTitle')} size="small" style={{ borderRadius: '8px' }}>
+            {/* Status Transition Action Card */}
+            <Card title={t('interviews.drawer.changeStatusTitle', 'Update Interview Status')} size="small" style={{ borderRadius: '8px' }}>
               <Space direction="vertical" style={{ width: '100%' }}>
                 <div style={{ display: 'flex', gap: '8px' }}>
                   <Select
-                    placeholder={t('interviews.drawer.selectNextStatus')}
+                    placeholder={t('interviews.drawer.selectNextStatus', 'Select new interview status')}
                     style={{ flex: 1 }}
                     value={selectedNextStatus}
                     onChange={(val) => setSelectedNextStatus(val)}
                   >
-                    <Option value="Scheduled">{t('interviews.statuses.Scheduled')}</Option>
-                    <Option value="Rescheduled">{t('interviews.statuses.Rescheduled')}</Option>
-                    <Option value="Completed">{t('interviews.statuses.Completed')}</Option>
-                    <Option value="Cancelled">{t('interviews.statuses.Cancelled')}</Option>
+                    <Option value="Scheduled">{t('interviews.statuses.Scheduled', 'Scheduled')}</Option>
+                    <Option value="Rescheduled">{t('interviews.statuses.Rescheduled', 'Rescheduled')}</Option>
+                    <Option value="Completed">{t('interviews.statuses.Completed', 'Completed')}</Option>
+                    <Option value="Cancelled">{t('interviews.statuses.Cancelled', 'Cancelled')}</Option>
                   </Select>
                   <Button
                     type="primary"
@@ -319,7 +411,7 @@ export const InterviewDetailsDrawer = ({
                     disabled={!selectedNextStatus}
                     loading={saving}
                   >
-                    {t('interviews.drawer.updateStatus')}
+                    {t('interviews.drawer.updateStatus', 'Update Status')}
                   </Button>
                 </div>
 
@@ -331,7 +423,7 @@ export const InterviewDetailsDrawer = ({
                     loading={saving}
                     disabled={interview.status === 'Completed'}
                   >
-                    {t('interviews.statuses.Completed')}
+                    {t('interviews.statuses.Completed', 'Completed')}
                   </Button>
                   <Button
                     icon={<FiRefreshCw />}
@@ -339,7 +431,7 @@ export const InterviewDetailsDrawer = ({
                     loading={saving}
                     disabled={interview.status === 'Rescheduled'}
                   >
-                    {t('interviews.statuses.Rescheduled')}
+                    {t('interviews.statuses.Rescheduled', 'Rescheduled')}
                   </Button>
                   <Button
                     danger
@@ -348,29 +440,11 @@ export const InterviewDetailsDrawer = ({
                     loading={saving}
                     disabled={interview.status === 'Cancelled'}
                   >
-                    {t('interviews.statuses.Cancelled')}
+                    {t('interviews.statuses.Cancelled', 'Cancelled')}
                   </Button>
                 </div>
               </Space>
             </Card>
-
-            {/* Additional Remarks / Notes */}
-            {interview.remarks && (
-              <div>
-                <Text strong>{t('interviews.drawer.remarks')}:</Text>
-                <Paragraph
-                  style={{
-                    background: 'var(--bg-subtle, #f8fafc)',
-                    padding: 12,
-                    borderRadius: 6,
-                    marginTop: 4,
-                    whiteSpace: 'pre-wrap',
-                  }}
-                >
-                  {interview.remarks}
-                </Paragraph>
-              </div>
-            )}
           </div>
         )}
       </Spin>

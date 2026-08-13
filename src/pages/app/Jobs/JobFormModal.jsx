@@ -102,11 +102,11 @@ export const JobFormModal = ({
 
   // Fetch professions & tariff groups dynamically when department / profession changes
   const handleDepartmentChange = async (value) => {
-    form.setFieldsValue({ profession: undefined });
+    form.setFieldsValue({ profession: undefined, tariff_group: undefined });
     try {
       const [profRes, tgRes] = await Promise.all([
         jobApi.getProfessions(value || ''),
-        jobApi.getTariffGroups(selectedProfession || '', value || ''),
+        jobApi.getTariffGroups('', value || ''),
       ]);
       if (Array.isArray(profRes)) setProfessions(profRes);
       if (Array.isArray(tgRes)) setTariffGroups(tgRes);
@@ -116,6 +116,7 @@ export const JobFormModal = ({
   };
 
   const handleProfessionChange = async (value) => {
+    form.setFieldsValue({ tariff_group: undefined });
     try {
       const tgRes = await jobApi.getTariffGroups(value || '', selectedDepartment || '');
       if (Array.isArray(tgRes)) setTariffGroups(tgRes);

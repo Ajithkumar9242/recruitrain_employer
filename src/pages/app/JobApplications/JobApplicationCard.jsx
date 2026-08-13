@@ -9,6 +9,7 @@ const { Text } = Typography;
 export const getStatusTagColor = (status) => {
   switch (status) {
     case 'Applied':
+    case 'Open':
       return 'blue';
     case 'Screening':
       return 'cyan';
@@ -24,6 +25,7 @@ export const getStatusTagColor = (status) => {
     case 'Rejected':
       return 'error';
     case 'Withdrawn':
+    case 'Closed':
       return 'default';
     default:
       return 'default';

@@ -33,6 +33,11 @@
     "search": "Search...",
     "filter": "Filter",
     "actions": "Actions",
+    "edit": "Edit",
+    "delete": "Delete",
+    "view": "View",
+    "viewDetails": "View Details",
+    "reset": "Reset",
     "noData": "No data available"
   },
   "auth": {
@@ -283,7 +288,15 @@
       "degreeCertificate": "Degree Certificate",
       "other": "Other",
       "fileUrl": "File Attachment URL",
-      "fileUrlPlaceholder": "/files/document.pdf"
+      "fileUrlPlaceholder": "/files/document.pdf",
+      "alternateMobile": "Alternate Mobile Number",
+      "candidateNameHint": "Candidate Name is auto-generated from First Name + Middle Name + Last Name."
+    },
+    "placeholders": {
+      "selectProfession": "Select profession",
+      "selectEmploymentType": "Select employment type",
+      "selectCountry": "Select country",
+      "selectNationality": "Select nationality"
     },
     "validation": {
       "firstNameRequired": "First name is required",
@@ -294,7 +307,11 @@
       "dobRequired": "Date of birth is required",
       "addressRequired": "Address line 1 is required",
       "cityRequired": "City is required",
-      "stateRequired": "State is required"
+      "stateRequired": "State is required",
+      "professionRequired": "Please select a profession",
+      "employmentTypeRequired": "Please select an employment type",
+      "countryRequired": "Please select a country",
+      "nationalityRequired": "Please select a nationality"
     },
     "empty": {
       "noCandidates": "No candidates found matching the active backend search criteria.",
@@ -316,7 +333,13 @@
       "conflictError": "This record was modified by another session. Please refresh and retry.",
       "resumeUploadError": "Failed to upload resume file.",
       "subresourceError": "Failed to update {{type}}.",
-      "validationError": "Validation error submitting candidate profile."
+      "invalidFileType": "Invalid file format. Allowed formats: PDF, DOC, DOCX.",
+      "fileTooLarge": "File size exceeds maximum allowed limit.",
+      "locationWarning": "State and city may not match the selected country.",
+      "validationError": "Validation error submitting candidate profile.",
+      "loadingProfessions": "Loading professions...",
+      "noProfessionsAvailable": "No professions available",
+      "professionsLoadError": "Unable to load professions. Please try again."
     }
   },
   "jobs": {
@@ -408,6 +431,13 @@
         "targetJoiningDate": "Target Joining Date",
         "minimumExperience": "Min Experience (Years)",
         "maximumExperience": "Max Experience (Years)",
+        "compensationType": "Compensation Type",
+        "salaryRange": "Salary Range",
+        "collectiveAgreement": "Collective Agreement (Tarifvertrag)",
+        "minimumAnnualSalary": "Minimum Annual Salary",
+        "maximumAnnualSalary": "Maximum Annual Salary",
+        "tariffGroup": "Tarifgruppe",
+        "entgeltgruppe": "Entgeltgruppe",
         "currency": "Currency",
         "minimumSalary": "Minimum Salary",
         "maximumSalary": "Maximum Salary",
