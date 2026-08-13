@@ -12,19 +12,32 @@ const toCamelCaseString = (str) => {
 
 export const extractPayload = (raw) => {
   if (raw === null || raw === undefined) return raw;
-  if (raw.message && typeof raw.message === 'object' && raw.message.data !== undefined) {
-    return raw.message.data;
+
+  let target = raw;
+  if (raw.data !== undefined && typeof raw.data === 'object' && raw.data.message !== undefined) {
+    target = raw.data.message;
+  } else if (raw.message !== undefined) {
+    target = raw.message;
+  } else if (raw.data !== undefined) {
+    target = raw.data;
   }
-  if (raw.data && typeof raw.data === 'object' && raw.data.data !== undefined) {
-    return raw.data.data;
+
+  if (target && typeof target === 'object') {
+    if (target.success === false) {
+      const msg = target.message || target.error?.message || 'Backend operation failed';
+      const errObj = new Error(msg);
+      errObj.code = target.error?.code || 'API_ERROR';
+      errObj.details = target.error?.details || target.details;
+      errObj.response = { status: 400, data: target };
+      throw errObj;
+    }
+
+    if (target.data !== undefined && target.data !== null) {
+      return target.data;
+    }
   }
-  if (raw.message !== undefined && raw.message !== null) {
-    return raw.message;
-  }
-  if (raw.data !== undefined && raw.data !== null) {
-    return raw.data;
-  }
-  return raw;
+
+  return target;
 };
 
 export const normalizeData = (data) => {

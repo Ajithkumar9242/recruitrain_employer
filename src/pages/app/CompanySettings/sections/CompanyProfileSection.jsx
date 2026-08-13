@@ -120,11 +120,38 @@ export const CompanyProfileSection = ({
       <Card size="small" style={{ marginBottom: '24px', borderRadius: '8px' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '16px' }}>
           <div>
-            <Title level={4} style={{ margin: 0, display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <FiBriefcase style={{ color: 'var(--brand-teal, #1890ff)' }} />
-              {t('companySettings.profile.title', 'Company Profile')}
-            </Title>
-            <Text type="secondary">
+            <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
+              <Title level={4} style={{ margin: 0, display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <FiBriefcase style={{ color: 'var(--brand-teal, #1890ff)' }} />
+                {t('companySettings.profile.title', 'Company Profile')}
+              </Title>
+
+              {/* Backend Status Badges */}
+              {profile?.status && (
+                <Tag color={profile.status === 'Active' ? 'blue' : 'default'} style={{ margin: 0 }}>
+                  {profile.status}
+                </Tag>
+              )}
+              {profile?.verified ? (
+                <Tag color="success" icon={<FiCheckCircle />} style={{ margin: 0 }}>
+                  {t('companySettings.profile.verified', 'Verified Company')}
+                </Tag>
+              ) : (
+                <Tag color="warning" style={{ margin: 0 }}>
+                  {t('companySettings.profile.unverified', 'Unverified')}
+                </Tag>
+              )}
+              {profile?.active ? (
+                <Tag color="green" style={{ margin: 0 }}>
+                  {t('companySettings.profile.activeState', 'Active')}
+                </Tag>
+              ) : (
+                <Tag color="red" style={{ margin: 0 }}>
+                  {t('companySettings.profile.inactiveState', 'Inactive')}
+                </Tag>
+              )}
+            </div>
+            <Text type="secondary" style={{ marginTop: '4px', display: 'block' }}>
               {t('companySettings.profile.subtitle', 'Authoritative company identity, contact information, and branding assets.')}
             </Text>
           </div>
@@ -253,7 +280,7 @@ export const CompanyProfileSection = ({
               label={t('companySettings.profile.companyName', 'Company Name (Canonical ID)')}
               extra={t('companySettings.profile.readOnlyHint', 'Read-only system identifier')}
             >
-              <Input disabled prefix={<FiBriefcase />} style={{ backgroundColor: '#f5f5f5' }} />
+              <Input disabled prefix={<FiBriefcase />} style={{ backgroundColor: '#f5f5f5', color: '#595959' }} />
             </Form.Item>
           </Col>
 
@@ -264,14 +291,38 @@ export const CompanyProfileSection = ({
           </Col>
 
           <Col xs={24} sm={12} md={8}>
-            <Form.Item name="company_code" label={t('companySettings.profile.companyCode', 'Company Code / Registration')}>
-              <Input placeholder="e.g. HRB-123456" />
+            <Form.Item
+              name="company_code"
+              label={t('companySettings.profile.companyCode', 'Company Code / Registration')}
+              extra={t('companySettings.profile.companyCodeHint', 'Read-only registration code')}
+            >
+              <Input disabled placeholder="e.g. HRB-123456" style={{ backgroundColor: '#f5f5f5', color: '#595959' }} />
             </Form.Item>
           </Col>
 
           <Col xs={24} sm={12} md={8}>
             <Form.Item name="industry" label={t('companySettings.profile.industry', 'Industry')}>
-              <Input placeholder="e.g. Technology / Software" />
+              <Select
+                showSearch
+                allowClear
+                placeholder={t('companySettings.profile.selectIndustry', 'Select or search industry')}
+              >
+                <Option value="Technology">Technology / Software</Option>
+                <Option value="Financial Services">Financial Services / Banking</Option>
+                <Option value="Healthcare">Healthcare & Life Sciences</Option>
+                <Option value="Manufacturing">Manufacturing & Industrial</Option>
+                <Option value="Retail">Retail & E-Commerce</Option>
+                <Option value="Education">Education & EdTech</Option>
+                <Option value="Professional Services">Professional & Business Services</Option>
+                <Option value="Telecommunications">Telecommunications</Option>
+                <Option value="Real Estate">Real Estate & Construction</Option>
+                <Option value="Transportation">Transportation & Logistics</Option>
+                <Option value="Media">Media & Entertainment</Option>
+                <Option value="Non-Profit">Non-Profit & Government</Option>
+                <Option value="Energy">Energy & Utilities</Option>
+                <Option value="Hospitality">Hospitality & Tourism</Option>
+                <Option value="Other">Other</Option>
+              </Select>
             </Form.Item>
           </Col>
 

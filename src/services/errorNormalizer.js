@@ -76,10 +76,10 @@ export const normalizeApiError = (error) => {
 
   if (!error.response) {
     return {
-      status: 0,
-      code: ERROR_CODES.NETWORK_ERROR,
-      message: 'Unable to connect to RecruitTrain servers. Please check your internet connection.',
-      details: error.message || null,
+      status: error.status || 0,
+      code: error.code || ERROR_CODES.NETWORK_ERROR,
+      message: error.message || 'Unable to connect to RecruitTrain servers. Please check your internet connection.',
+      details: error.details || null,
     };
   }
 

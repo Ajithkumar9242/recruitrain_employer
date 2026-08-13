@@ -1,6 +1,8 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import settingsApi from '../../services/settingsApi';
 import { formatApiError } from '../../services/errorNormalizer';
+import { setTheme } from './uiSlice';
+import { setLanguage } from './languageSlice';
 
 /**
  * RecruitTrain Employer Settings Slice
@@ -37,6 +39,12 @@ export const updateGeneralSettings = createAsyncThunk(
   async (payload, { rejectWithValue, dispatch }) => {
     try {
       const res = await settingsApi.updateGeneralSettings(payload);
+      if (payload.theme) {
+        dispatch(setTheme(payload.theme));
+      }
+      if (payload.language) {
+        dispatch(setLanguage(payload.language));
+      }
       await dispatch(fetchGeneralSettings());
       return res;
     } catch (err) {
