@@ -61,6 +61,7 @@ export const normalizeOffer = (raw) => {
     name: id,
     offerId: id,
     offerName,
+    offer_name: offerName,
 
     // Authoritative relationships derived by backend
     candidate: candidateId,

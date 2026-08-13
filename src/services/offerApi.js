@@ -91,14 +91,23 @@ export const offerApi = {
   async createOffer(data) {
     const payload = {
       job_application: data.jobApplication || data.job_application,
-      offered_salary: data.offeredSalary !== undefined && data.offeredSalary !== null ? Number(data.offeredSalary) : (data.offered_salary !== undefined ? Number(data.offered_salary) : undefined),
+      candidate: data.candidate,
+      job_opening: data.jobOpening || data.job_opening,
+      company: data.company,
+      offered_salary: data.offeredSalary !== undefined && data.offeredSalary !== null
+        ? Number(data.offeredSalary)
+        : (data.offered_salary !== undefined && data.offered_salary !== null ? Number(data.offered_salary) : undefined),
       currency: data.currency || 'USD',
       joining_date: data.joiningDate || data.joining_date,
-      probation_period_months: data.probationPeriodMonths !== undefined && data.probationPeriodMonths !== null ? Number(data.probationPeriodMonths) : (data.probation_period_months !== undefined ? Number(data.probation_period_months) : undefined),
+      probation_period_months: data.probationPeriodMonths !== undefined && data.probationPeriodMonths !== null
+        ? Number(data.probationPeriodMonths)
+        : (data.probation_period_months !== undefined && data.probation_period_months !== null ? Number(data.probation_period_months) : undefined),
       offer_date: data.offerDate || data.offer_date,
       expiry_date: data.expiryDate || data.expiry_date,
       employment_type: data.employmentType || data.employment_type,
       reporting_manager: data.reportingManager || data.reporting_manager,
+      offer_status: data.offerStatus || data.offer_status || data.status || 'Draft',
+      response_date: data.responseDate || data.response_date,
       candidate_remarks: data.candidateRemarks || data.candidate_remarks,
       offer_letter: data.offerLetter || data.offer_letter,
       notes: data.notes,
@@ -133,10 +142,14 @@ export const offerApi = {
     if (data.offer_date !== undefined) payload.offer_date = data.offer_date;
     if (data.expiryDate !== undefined) payload.expiry_date = data.expiryDate;
     if (data.expiry_date !== undefined) payload.expiry_date = data.expiry_date;
+    if (data.responseDate !== undefined) payload.response_date = data.responseDate;
+    if (data.response_date !== undefined) payload.response_date = data.response_date;
     if (data.employmentType !== undefined) payload.employment_type = data.employmentType;
     if (data.employment_type !== undefined) payload.employment_type = data.employment_type;
     if (data.reportingManager !== undefined) payload.reporting_manager = data.reportingManager;
     if (data.reporting_manager !== undefined) payload.reporting_manager = data.reporting_manager;
+    if (data.offerStatus !== undefined) payload.offer_status = data.offerStatus;
+    if (data.offer_status !== undefined) payload.offer_status = data.offer_status;
     if (data.candidateRemarks !== undefined) payload.candidate_remarks = data.candidateRemarks;
     if (data.candidate_remarks !== undefined) payload.candidate_remarks = data.candidate_remarks;
     if (data.offerLetter !== undefined) payload.offer_letter = data.offerLetter;
@@ -221,6 +234,34 @@ export const offerApi = {
       offer_id: offerId,
     });
     return response?.data || response?.message || response;
+  },
+
+  /**
+   * Upload file to Frappe attachment repository for Offer Letter
+   * @param {File} file - File object
+   * @param {string|null} offerId - Optional Offer ID
+   * @returns {Promise<string>} Uploaded file URL
+   */
+  async uploadOfferLetter(file, offerId = null) {
+    const formData = new FormData();
+    formData.append('file', file);
+    formData.append('doctype', 'Offer');
+    if (offerId) formData.append('docname', String(offerId));
+    formData.append('fieldname', 'offer_letter');
+    formData.append('is_private', 0);
+
+    const response = await apiClient.post('/method/upload_file', formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    });
+
+    const fileUrl =
+      response?.message?.file_url ||
+      response?.data?.file_url ||
+      response?.file_url ||
+      response?.message?.file_name;
+    return fileUrl;
   },
 };
 

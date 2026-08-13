@@ -5,19 +5,16 @@ import {
   Tag,
   Button,
   Space,
-  Divider,
   Popconfirm,
   Spin,
   Typography,
   Card,
-  Tooltip,
 } from 'antd';
 import {
   FiAward,
   FiUser,
   FiBriefcase,
   FiFileText,
-  FiCalendar,
   FiDollarSign,
   FiEdit,
   FiTrash2,
@@ -25,6 +22,8 @@ import {
   FiCheckCircle,
   FiXCircle,
   FiCornerUpLeft,
+  FiExternalLink,
+  FiDownload,
 } from 'react-icons/fi';
 import dayjs from 'dayjs';
 import { useLanguage } from '../../../hooks/useLanguage';
@@ -47,6 +46,8 @@ export const getOfferStatusTagColor = (status) => {
       return 'error';
     case 'Withdrawn':
       return 'warning';
+    case 'Expired':
+      return 'volcano';
     default:
       return 'default';
   }
@@ -68,43 +69,67 @@ export const OfferDetailsDrawer = ({
 }) => {
   const { t } = useLanguage();
 
-  if (!offer && !loading) return null;
+  if (!visible) return null;
 
   const currentStatus = offer?.offerStatus || offer?.status || 'Draft';
+  const offerId = offer?.id || offer?.name || offer?.offerId;
+  const offerName = offer?.offerName || offer?.offer_name || offerId;
 
   return (
     <Drawer
       title={
-        <Space>
-          <FiAward style={{ color: 'var(--brand-teal, #1890ff)' }} />
-          <span>{offer?.offerName || offer?.id || t('offers.drawer.title')}</span>
+        <Space align="center">
+          <div
+            style={{
+              width: 32,
+              height: 32,
+              borderRadius: 8,
+              backgroundColor: 'rgba(24, 144, 255, 0.1)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              color: 'var(--brand-teal, #1890ff)',
+            }}
+          >
+            <FiAward size={18} />
+          </div>
+          <div>
+            <div style={{ fontWeight: 600, fontSize: '1rem', lineHeight: 1.2 }}>
+              {offerName || t('offers.drawer.title', 'Offer Details')}
+            </div>
+            {offerId && (
+              <Text type="secondary" style={{ fontSize: '0.75rem' }}>
+                ID: {offerId}
+              </Text>
+            )}
+          </div>
         </Space>
       }
       placement="right"
-      width={600}
+      width={640}
       onClose={onClose}
       open={visible}
       extra={
         <Space>
-          {onEdit && (
+          {onEdit && offer && (
             <Button
               icon={<FiEdit />}
               onClick={() => onEdit(offer)}
-              disabled={saving || deleting}
+              disabled={saving || deleting || loading}
             >
               {t('common.edit', 'Edit')}
             </Button>
           )}
-          {onDelete && (
+          {onDelete && offer && (
             <Popconfirm
-              title={t('offers.messages.deleteConfirmTitle')}
-              description={t('offers.messages.deleteConfirmSub')}
-              onConfirm={() => onDelete(offer?.id)}
-              okText={t('common.confirm')}
-              cancelText={t('common.cancel')}
+              title={t('offers.messages.deleteConfirmTitle', 'Delete Offer?')}
+              description={t('offers.messages.deleteConfirmSub', 'Are you sure you want to delete this offer?')}
+              onConfirm={() => onDelete(offerId)}
+              okText={t('common.confirm', 'Delete')}
+              cancelText={t('common.cancel', 'Cancel')}
               okButtonProps={{ danger: true }}
             >
-              <Button danger icon={<FiTrash2 />} loading={deleting}>
+              <Button danger icon={<FiTrash2 />} loading={deleting} disabled={saving || loading}>
                 {t('common.delete', 'Delete')}
               </Button>
             </Popconfirm>
@@ -113,59 +138,56 @@ export const OfferDetailsDrawer = ({
       }
     >
       {loading ? (
-        <div style={{ textAlign: 'center', padding: '40px 0' }}>
-          <Spin size="large" />
+        <div style={{ textAlign: 'center', padding: '60px 0' }}>
+          <Spin size="large" tip={t('common.loading', 'Loading offer details...')} />
         </div>
       ) : offer ? (
         <div>
-          {/* Workflow Action Header */}
+          {/* Status Header Banner & Actions */}
           <Card size="small" style={{ marginBottom: '20px', backgroundColor: 'var(--bg-subtle, #f8fafc)' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px' }}>
               <div>
-                <Text type="secondary" style={{ display: 'block', fontSize: '12px' }}>
-                  {t('common.status')}:
+                <Text type="secondary" style={{ display: 'block', fontSize: '12px', marginBottom: 2 }}>
+                  {t('common.status', 'Status')}:
                 </Text>
-                <Tag color={getOfferStatusTagColor(currentStatus)} style={{ fontSize: '14px', padding: '4px 10px' }}>
-                  {t(`offers.statuses.${currentStatus}`, currentStatus)}
+                <Tag color={getOfferStatusTagColor(currentStatus)} style={{ fontSize: '14px', padding: '4px 12px', fontWeight: 600 }}>
+                  {currentStatus}
                 </Tag>
               </div>
 
-              {/* Action Buttons based on backend certified workflow */}
+              {/* Action Buttons based on FSM */}
               <Space flexWrap>
-                {/* Send Offer available for Draft, Pending Approval, Approved */}
                 {(currentStatus === 'Draft' || currentStatus === 'Approved' || currentStatus === 'Pending Approval') && onSend && (
                   <Button
                     type="primary"
                     icon={<FiSend />}
                     loading={saving}
-                    onClick={() => onSend(offer.id)}
+                    onClick={() => onSend(offerId)}
                     style={{ backgroundColor: 'var(--brand-navy, #0f172a)' }}
                   >
                     {t('offers.actions.send', 'Send Offer')}
                   </Button>
                 )}
 
-                {/* Accept Offer available for Sent */}
                 {currentStatus === 'Sent' && onAccept && (
                   <Button
                     type="primary"
                     icon={<FiCheckCircle />}
                     loading={saving}
-                    onClick={() => onAccept(offer.id)}
+                    onClick={() => onAccept(offerId)}
                     style={{ backgroundColor: '#52c41a', borderColor: '#52c41a' }}
                   >
                     {t('offers.actions.accept', 'Accept')}
                   </Button>
                 )}
 
-                {/* Reject Offer available for Sent */}
                 {currentStatus === 'Sent' && onReject && (
                   <Popconfirm
                     title={t('offers.actions.confirmRejectTitle', 'Reject Offer?')}
                     description={t('offers.actions.confirmRejectSub', 'Are you sure you want to mark this offer as rejected?')}
-                    onConfirm={() => onReject(offer.id)}
-                    okText={t('common.confirm')}
-                    cancelText={t('common.cancel')}
+                    onConfirm={() => onReject(offerId)}
+                    okText={t('common.confirm', 'Confirm')}
+                    cancelText={t('common.cancel', 'Cancel')}
                     okButtonProps={{ danger: true }}
                   >
                     <Button danger icon={<FiXCircle />} loading={saving}>
@@ -174,14 +196,13 @@ export const OfferDetailsDrawer = ({
                   </Popconfirm>
                 )}
 
-                {/* Withdraw Offer available for Sent / Approved / Pending Approval */}
                 {(currentStatus === 'Sent' || currentStatus === 'Approved' || currentStatus === 'Pending Approval') && onWithdraw && (
                   <Popconfirm
                     title={t('offers.actions.confirmWithdrawTitle', 'Withdraw Offer?')}
                     description={t('offers.actions.confirmWithdrawSub', 'Are you sure you want to withdraw this offer?')}
-                    onConfirm={() => onWithdraw(offer.id)}
-                    okText={t('common.confirm')}
-                    cancelText={t('common.cancel')}
+                    onConfirm={() => onWithdraw(offerId)}
+                    okText={t('common.confirm', 'Confirm')}
+                    cancelText={t('common.cancel', 'Cancel')}
                   >
                     <Button icon={<FiCornerUpLeft />} loading={saving}>
                       {t('offers.actions.withdraw', 'Withdraw')}
@@ -192,17 +213,17 @@ export const OfferDetailsDrawer = ({
             </div>
           </Card>
 
-          {/* Overview Section */}
-          <Title level={5}>
-            <FiAward style={{ marginRight: '8px' }} />
-            {t('offers.drawer.overview', 'Offer Overview')}
+          {/* Section 1: Offer Overview */}
+          <Title level={5} style={{ marginBottom: 12 }}>
+            <FiAward style={{ marginRight: '8px', color: 'var(--brand-teal, #1890ff)' }} />
+            {t('offers.drawer.overview', 'Offer Information')}
           </Title>
           <Descriptions column={1} bordered size="small" style={{ marginBottom: '20px' }}>
             <Descriptions.Item label={t('offers.table.id', 'Offer ID')}>
-              <Text copyable>{offer.id}</Text>
+              <Text copyable>{offerId}</Text>
             </Descriptions.Item>
             <Descriptions.Item label={t('offers.drawer.offerName', 'Offer Name')}>
-              {offer.offerName}
+              {offerName}
             </Descriptions.Item>
             <Descriptions.Item label={t('offers.table.offerDate', 'Offer Date')}>
               {offer.offerDate ? dayjs(offer.offerDate).format('YYYY-MM-DD') : '-'}
@@ -210,34 +231,32 @@ export const OfferDetailsDrawer = ({
             <Descriptions.Item label={t('offers.table.expiryDate', 'Expiry Date')}>
               {offer.expiryDate ? dayjs(offer.expiryDate).format('YYYY-MM-DD') : '-'}
             </Descriptions.Item>
-            {offer.responseDate && (
-              <Descriptions.Item label={t('offers.drawer.responseDate', 'Response Date')}>
-                {dayjs(offer.responseDate).format('YYYY-MM-DD')}
-              </Descriptions.Item>
-            )}
           </Descriptions>
 
-          {/* Parent Entity References */}
-          <Title level={5}>
-            <FiUser style={{ marginRight: '8px' }} />
-            {t('offers.drawer.references', 'Entity References')}
+          {/* Section 2: Relational References */}
+          <Title level={5} style={{ marginBottom: 12 }}>
+            <FiUser style={{ marginRight: '8px', color: 'var(--brand-teal, #1890ff)' }} />
+            {t('offers.drawer.references', 'Authoritative Entity References')}
           </Title>
           <Descriptions column={1} bordered size="small" style={{ marginBottom: '20px' }}>
             <Descriptions.Item label={t('offers.table.candidate', 'Candidate Reference')}>
-              <Text copyable>{offer.candidate || '-'}</Text>
+              {offer.candidate ? <Text copyable>{offer.candidate}</Text> : '-'}
             </Descriptions.Item>
             <Descriptions.Item label={t('offers.drawer.jobAppRef', 'Job Application Reference')}>
-              <Text copyable>{offer.jobApplication || '-'}</Text>
+              {offer.jobApplication ? <Text copyable>{offer.jobApplication}</Text> : '-'}
             </Descriptions.Item>
             <Descriptions.Item label={t('offers.table.jobOpening', 'Job Opening Reference')}>
-              <Text copyable>{offer.jobOpening || '-'}</Text>
+              {offer.jobOpening ? <Text copyable>{offer.jobOpening}</Text> : '-'}
+            </Descriptions.Item>
+            <Descriptions.Item label={t('offers.table.company', 'Company')}>
+              {offer.company || '-'}
             </Descriptions.Item>
           </Descriptions>
 
-          {/* Compensation Section */}
-          <Title level={5}>
-            <FiDollarSign style={{ marginRight: '8px' }} />
-            {t('offers.drawer.compensation', 'Compensation & Terms')}
+          {/* Section 3: Compensation & Schedule */}
+          <Title level={5} style={{ marginBottom: 12 }}>
+            <FiDollarSign style={{ marginRight: '8px', color: 'var(--brand-teal, #1890ff)' }} />
+            {t('offers.drawer.compensation', 'Compensation & Schedule')}
           </Title>
           <Descriptions column={1} bordered size="small" style={{ marginBottom: '20px' }}>
             <Descriptions.Item label={t('offers.table.offeredSalary', 'Offered Salary')}>
@@ -245,75 +264,114 @@ export const OfferDetailsDrawer = ({
                 ? `${offer.currency || 'USD'} ${Number(offer.offeredSalary).toLocaleString()}`
                 : '-'}
             </Descriptions.Item>
-            <Descriptions.Item label={t('offers.drawer.probation', 'Probation Period')}>
-              {offer.probationPeriodMonths ? `${offer.probationPeriodMonths} ${t('offers.drawer.months', 'months')}` : '-'}
+            <Descriptions.Item label={t('offers.table.joiningDate', 'Joining Date')}>
+              {offer.joiningDate ? dayjs(offer.joiningDate).format('YYYY-MM-DD') : '-'}
             </Descriptions.Item>
-            <Descriptions.Item label={t('offers.drawer.employmentType', 'Employment Type')}>
-              {offer.employmentType || '-'}
+            <Descriptions.Item label={t('offers.drawer.probation', 'Probation Period')}>
+              {offer.probationPeriodMonths !== undefined && offer.probationPeriodMonths !== null
+                ? `${offer.probationPeriodMonths} ${t('offers.drawer.months', 'months')}`
+                : '-'}
             </Descriptions.Item>
           </Descriptions>
 
-          {/* Employment Details Section */}
-          <Title level={5}>
-            <FiBriefcase style={{ marginRight: '8px' }} />
-            {t('offers.drawer.employment', 'Employment Schedule')}
+          {/* Section 4: Offer Details */}
+          <Title level={5} style={{ marginBottom: 12 }}>
+            <FiBriefcase style={{ marginRight: '8px', color: 'var(--brand-teal, #1890ff)' }} />
+            {t('offers.drawer.employment', 'Offer Details')}
           </Title>
           <Descriptions column={1} bordered size="small" style={{ marginBottom: '20px' }}>
-            <Descriptions.Item label={t('offers.table.joiningDate', 'Joining Date')}>
-              {offer.joiningDate ? dayjs(offer.joiningDate).format('YYYY-MM-DD') : '-'}
+            <Descriptions.Item label={t('offers.drawer.employmentType', 'Employment Type')}>
+              {offer.employmentType || '-'}
             </Descriptions.Item>
             <Descriptions.Item label={t('offers.drawer.reportingManager', 'Reporting Manager')}>
               {offer.reportingManager || '-'}
             </Descriptions.Item>
           </Descriptions>
 
-          {/* Offer Letter & Attachment */}
-          {offer.offerLetter && (
-            <>
-              <Title level={5}>
-                <FiFileText style={{ marginRight: '8px' }} />
-                {t('offers.drawer.offerLetter', 'Offer Letter Document')}
-              </Title>
-              <div style={{ marginBottom: '20px' }}>
-                <Button
-                  type="link"
-                  icon={<FiFileText />}
-                  href={offer.offerLetter}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  style={{ padding: 0 }}
-                >
-                  {offer.offerLetter}
-                </Button>
-              </div>
-            </>
-          )}
+          {/* Section 5: Candidate Response */}
+          <Title level={5} style={{ marginBottom: 12 }}>
+            <FiCheckCircle style={{ marginRight: '8px', color: 'var(--brand-teal, #1890ff)' }} />
+            {t('offers.drawer.candidateResponse', 'Candidate Response')}
+          </Title>
+          <Descriptions column={1} bordered size="small" style={{ marginBottom: '20px' }}>
+            <Descriptions.Item label={t('offers.drawer.responseDate', 'Response Date')}>
+              {offer.responseDate ? dayjs(offer.responseDate).format('YYYY-MM-DD') : '-'}
+            </Descriptions.Item>
+            <Descriptions.Item label={t('offers.drawer.candidateRemarks', 'Candidate Remarks')}>
+              {offer.candidateRemarks || '-'}
+            </Descriptions.Item>
+          </Descriptions>
 
-          {/* Remarks & Notes */}
-          {(offer.candidateRemarks || offer.notes) && (
+          {/* Section 6: Offer Letter Attachment */}
+          <Title level={5} style={{ marginBottom: 12 }}>
+            <FiFileText style={{ marginRight: '8px', color: 'var(--brand-teal, #1890ff)' }} />
+            {t('offers.drawer.offerLetter', 'Offer Letter Document')}
+          </Title>
+          <div style={{ marginBottom: '20px' }}>
+            {offer.offerLetter ? (
+              <div
+                style={{
+                  padding: '12px 16px',
+                  borderRadius: 8,
+                  border: '1px solid #e2e8f0',
+                  backgroundColor: '#f8fafc',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                }}
+              >
+                <Space align="center">
+                  <FiFileText size={22} style={{ color: 'var(--brand-teal, #1890ff)' }} />
+                  <div>
+                    <Text strong style={{ fontSize: '0.85rem', display: 'block' }}>
+                      {offer.offerLetter.split('/').pop()}
+                    </Text>
+                    <Text type="secondary" style={{ fontSize: '0.75rem' }}>
+                      Frappe Attachment URL
+                    </Text>
+                  </div>
+                </Space>
+                <Space>
+                  <Button
+                    type="primary"
+                    ghost
+                    size="small"
+                    icon={<FiExternalLink />}
+                    href={offer.offerLetter}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                    View
+                  </Button>
+                  <Button
+                    size="small"
+                    icon={<FiDownload />}
+                    href={offer.offerLetter}
+                    download
+                  >
+                    Download
+                  </Button>
+                </Space>
+              </div>
+            ) : (
+              <Text type="secondary">-</Text>
+            )}
+          </div>
+
+          {/* Section 7: Internal Notes */}
+          {offer.notes && (
             <>
-              <Title level={5}>{t('offers.drawer.remarks', 'Remarks & Notes')}</Title>
-              {offer.candidateRemarks && (
-                <div style={{ marginBottom: '12px' }}>
-                  <Text type="secondary" style={{ display: 'block', fontSize: '12px' }}>
-                    {t('offers.drawer.candidateRemarks', 'Candidate Remarks')}:
-                  </Text>
-                  <Paragraph style={{ margin: 0 }}>{offer.candidateRemarks}</Paragraph>
-                </div>
-              )}
-              {offer.notes && (
-                <div style={{ marginBottom: '20px' }}>
-                  <Text type="secondary" style={{ display: 'block', fontSize: '12px' }}>
-                    {t('offers.drawer.notes', 'Internal Notes')}:
-                  </Text>
-                  <Paragraph style={{ margin: 0 }}>{offer.notes}</Paragraph>
-                </div>
-              )}
+              <Title level={5} style={{ marginBottom: 12 }}>
+                {t('offers.drawer.notes', 'Internal Notes')}
+              </Title>
+              <Card size="small" style={{ marginBottom: '20px', backgroundColor: '#f8fafc', borderColor: '#e2e8f0' }}>
+                <Paragraph style={{ margin: 0, fontSize: '0.85rem' }}>{offer.notes}</Paragraph>
+              </Card>
             </>
           )}
         </div>
       ) : (
-        <Text type="secondary">{t('offers.drawer.noData', 'No offer details selected.')}</Text>
+        <Text type="secondary">{t('offers.drawer.noData', 'No offer selected.')}</Text>
       )}
     </Drawer>
   );

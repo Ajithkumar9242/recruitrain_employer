@@ -10,9 +10,7 @@ import {
   Typography,
   Popconfirm,
   Tooltip,
-  Spin,
   message,
-  Dropdown,
 } from 'antd';
 import {
   FiAward,
@@ -25,12 +23,8 @@ import {
   FiTrash2,
   FiSend,
   FiCheckCircle,
-  FiXCircle,
-  FiCornerUpLeft,
-  FiMoreVertical,
 } from 'react-icons/fi';
 import dayjs from 'dayjs';
-import PageHeader from '../../../components/common/PageHeader';
 import { useLanguage } from '../../../hooks/useLanguage';
 import { useOffers } from '../../../hooks/useOffers';
 import { OfferDetailsDrawer, getOfferStatusTagColor } from './OfferDetailsDrawer';
@@ -129,14 +123,8 @@ export const OffersPage = () => {
   // Handle error notifications
   useEffect(() => {
     if (error) {
-      const msg = typeof error === 'string' ? error : error?.message || t('common.error');
-      if (msg.includes('409') || msg.includes('conflict') || msg.includes('Conflict') || msg.includes('modified elsewhere')) {
-        message.error(t('offers.messages.concurrencyConflict', 'This offer was modified elsewhere. Please refresh and try again.'));
-      } else if (msg.includes('linked') || msg.includes('Constraint')) {
-        message.error(t('offers.messages.deleteBlocked', 'Offer cannot be deleted because linked recruitment records exist.'));
-      } else {
-        message.error(msg);
-      }
+      const msg = typeof error === 'string' ? error : error?.message || t('common.error', 'An error occurred.');
+      message.error(msg);
       clearError();
     }
   }, [error, clearError, t]);
@@ -204,7 +192,7 @@ export const OffersPage = () => {
   // Action Handlers
   const handleViewDetails = (record) => {
     setSelectedOffer(record);
-    getOfferDetails(record.id);
+    getOfferDetails(record.id || record.name);
     setDrawerOpen(true);
   };
 
@@ -219,8 +207,8 @@ export const OffersPage = () => {
   };
 
   const handleFormSubmit = async (payload) => {
-    if (editingOffer?.id) {
-      await updateOffer(editingOffer.id, payload);
+    if (editingOffer?.id || editingOffer?.name) {
+      await updateOffer(editingOffer.id || editingOffer.name, payload);
     } else {
       await createOffer(payload);
     }
@@ -248,10 +236,10 @@ export const OffersPage = () => {
 
   const columns = [
     {
-      title: t('offers.table.id', 'Offer'),
+      title: t('offers.table.id', 'Offer ID'),
       dataIndex: 'name',
       key: 'name',
-      width: 150,
+      width: 140,
       render: (text, record) => (
         <Button
           type="link"
@@ -267,14 +255,21 @@ export const OffersPage = () => {
       dataIndex: 'candidate',
       key: 'candidate',
       width: 150,
-      render: (text) => <Text copyable={{ text }}>{text || '-'}</Text>,
+      render: (text) => (text ? <Text copyable={{ text }}>{text}</Text> : '-'),
+    },
+    {
+      title: t('offers.table.jobApplication', 'Job Application'),
+      dataIndex: 'jobApplication',
+      key: 'jobApplication',
+      width: 150,
+      render: (text) => (text ? <Text copyable={{ text }}>{text}</Text> : '-'),
     },
     {
       title: t('offers.table.jobOpening', 'Job Opening'),
       dataIndex: 'jobOpening',
       key: 'jobOpening',
       width: 150,
-      render: (text) => <Text copyable={{ text }}>{text || '-'}</Text>,
+      render: (text) => (text ? <Text copyable={{ text }}>{text}</Text> : '-'),
     },
     {
       title: t('offers.table.offeredSalary', 'Offered Salary'),
@@ -292,11 +287,18 @@ export const OffersPage = () => {
       render: (date) => (date ? dayjs(date).format('YYYY-MM-DD') : '-'),
     },
     {
-      title: t('offers.table.expiryDate', 'Expiry Date'),
-      dataIndex: 'expiryDate',
-      key: 'expiryDate',
+      title: t('offers.table.offerDate', 'Offer Date'),
+      dataIndex: 'offerDate',
+      key: 'offerDate',
       width: 130,
       render: (date) => (date ? dayjs(date).format('YYYY-MM-DD') : '-'),
+    },
+    {
+      title: t('offers.table.employmentType', 'Employment Type'),
+      dataIndex: 'employmentType',
+      key: 'employmentType',
+      width: 140,
+      render: (text) => text || '-',
     },
     {
       title: t('offers.table.offerStatus', 'Offer Status'),
@@ -310,19 +312,14 @@ export const OffersPage = () => {
       ),
     },
     {
-      title: t('offers.table.offerDate', 'Offer Date'),
-      dataIndex: 'offerDate',
-      key: 'offerDate',
-      width: 130,
-      render: (date) => (date ? dayjs(date).format('YYYY-MM-DD') : '-'),
-    },
-    {
       title: t('common.actions', 'Actions'),
       key: 'actions',
-      width: 200,
+      width: 180,
       fixed: 'right',
       render: (_, record) => {
         const status = record.offerStatus || record.status;
+        const offerId = record.id || record.name;
+
         return (
           <Space size="small">
             <Tooltip title={t('offers.actions.viewDetails', 'View Details')}>
@@ -347,7 +344,7 @@ export const OffersPage = () => {
                   type="text"
                   icon={<FiSend style={{ color: 'var(--brand-teal, #1890ff)' }} />}
                   loading={saving}
-                  onClick={() => handleSendOffer(record.id)}
+                  onClick={() => handleSendOffer(offerId)}
                 />
               </Tooltip>
             )}
@@ -358,7 +355,7 @@ export const OffersPage = () => {
                   type="text"
                   icon={<FiCheckCircle style={{ color: '#52c41a' }} />}
                   loading={saving}
-                  onClick={() => handleAcceptOffer(record.id)}
+                  onClick={() => handleAcceptOffer(offerId)}
                 />
               </Tooltip>
             )}
@@ -366,7 +363,7 @@ export const OffersPage = () => {
             <Popconfirm
               title={t('offers.messages.deleteConfirmTitle', 'Delete Offer?')}
               description={t('offers.messages.deleteConfirmSub', 'This action will permanently delete this offer record.')}
-              onConfirm={() => handleDeleteOffer(record.id)}
+              onConfirm={() => handleDeleteOffer(offerId)}
               okText={t('common.confirm', 'Confirm')}
               cancelText={t('common.cancel', 'Cancel')}
               okButtonProps={{ danger: true }}
@@ -448,6 +445,7 @@ export const OffersPage = () => {
             <Option value="Accepted">{t('offers.statuses.Accepted', 'Accepted')}</Option>
             <Option value="Rejected">{t('offers.statuses.Rejected', 'Rejected')}</Option>
             <Option value="Withdrawn">{t('offers.statuses.Withdrawn', 'Withdrawn')}</Option>
+            <Option value="Expired">{t('offers.statuses.Expired', 'Expired')}</Option>
           </Select>
 
           {(search || filters.offerStatus) && (
@@ -474,7 +472,7 @@ export const OffersPage = () => {
             showTotal: (total, range) => `${range[0]}-${range[1]} of ${total} offers`,
           }}
           onChange={handleTableChange}
-          scroll={{ x: 1200 }}
+          scroll={{ x: 1300 }}
           locale={{
             emptyText: t('offers.empty.noOffers', 'No offers found matching the active search criteria.'),
           }}

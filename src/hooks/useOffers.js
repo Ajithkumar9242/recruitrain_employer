@@ -56,56 +56,56 @@ export const useOffers = () => {
 
   const createOffer = useCallback(
     (data) => {
-      return dispatch(createOfferThunk(data));
+      return dispatch(createOfferThunk(data)).unwrap();
     },
     [dispatch]
   );
 
   const updateOffer = useCallback(
     (offerId, data) => {
-      return dispatch(updateOfferThunk({ offerId, data }));
+      return dispatch(updateOfferThunk({ offerId, data })).unwrap();
     },
     [dispatch]
   );
 
   const changeStatus = useCallback(
     (offerId, status) => {
-      return dispatch(changeOfferStatusThunk({ offerId, status }));
+      return dispatch(changeOfferStatusThunk({ offerId, status })).unwrap();
     },
     [dispatch]
   );
 
   const sendOffer = useCallback(
     (offerId) => {
-      return dispatch(sendOfferThunk(offerId));
+      return dispatch(sendOfferThunk(offerId)).unwrap();
     },
     [dispatch]
   );
 
   const acceptOffer = useCallback(
     (offerId) => {
-      return dispatch(acceptOfferThunk(offerId));
+      return dispatch(acceptOfferThunk(offerId)).unwrap();
     },
     [dispatch]
   );
 
   const rejectOffer = useCallback(
     (offerId) => {
-      return dispatch(rejectOfferThunk(offerId));
+      return dispatch(rejectOfferThunk(offerId)).unwrap();
     },
     [dispatch]
   );
 
   const withdrawOffer = useCallback(
     (offerId) => {
-      return dispatch(withdrawOfferThunk(offerId));
+      return dispatch(withdrawOfferThunk(offerId)).unwrap();
     },
     [dispatch]
   );
 
   const deleteOffer = useCallback(
     (offerId) => {
-      return dispatch(deleteOfferThunk(offerId));
+      return dispatch(deleteOfferThunk(offerId)).unwrap();
     },
     [dispatch]
   );
