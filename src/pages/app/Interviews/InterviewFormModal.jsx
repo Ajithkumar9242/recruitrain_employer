@@ -167,7 +167,7 @@ export const InterviewFormModal = ({
                   placeholder="Select Job Application"
                   disabled={isEditing}
                   optionFilterProp="children"
-                  notFoundContent="No interview-eligible job applications found (Stage must be 'Interview')"
+                  notFoundContent="No interview-eligible job applications found (terminal applications: Hired, Rejected, Withdrawn are ineligible)"
                 >
                   {selectableApps.map((app) => {
                     const appId = app.id || app.name || app.applicationId;

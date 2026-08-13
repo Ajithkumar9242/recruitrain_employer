@@ -24,6 +24,7 @@ export const useInterviews = () => {
 
   const {
     items,
+    unscheduledItems,
     selectedInterview,
     pagination,
     filters,
@@ -132,6 +133,7 @@ export const useInterviews = () => {
   return {
     items,
     interviews: items,
+    unscheduledItems: unscheduledItems || [],
     selectedInterview,
     pagination,
     filters,

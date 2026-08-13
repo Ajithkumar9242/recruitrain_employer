@@ -47,6 +47,7 @@ export const InterviewsPage = () => {
   const { t } = useLanguage();
   const {
     items: interviews,
+    unscheduledItems,
     selectedInterview,
     pagination,
     filters,
@@ -177,9 +178,7 @@ export const InterviewsPage = () => {
         record.jobApplication || record.job_application || record.application_id || ''
       ).trim();
 
-      const isMastersLoaded = Object.keys(applicationsMap).length > 0;
       const appData = applicationsMap[appIdStr] || (appIdStr && applicationsMap[Number(appIdStr)]) || null;
-      const isStale = Boolean(appIdStr && isMastersLoaded && !appData);
 
       let candId = '';
       let candName = '';
@@ -192,34 +191,13 @@ export const InterviewsPage = () => {
       let currentStage = '';
       let applicationStatus = '';
 
-      if (isStale) {
-        candName = 'Candidate unavailable';
-        jobOpeningTitle = 'Job Opening unavailable';
-        currentStage = 'Unavailable';
-        applicationStatus = 'Unavailable';
-      } else if (appData) {
-        currentStage = appData.currentStage || appData.current_stage || '-';
-        applicationStatus = appData.status || appData.application_status || '-';
+      if (appData) {
+        currentStage = appData.currentStage || appData.current_stage || 'Not available';
+        applicationStatus = appData.status || appData.application_status || 'Not available';
 
         candId = String(
           appData.candidate || appData.candidateId || record.candidate || record.candidateId || ''
         ).trim();
-        const candData = candidatesMap[candId] || (candId && candidatesMap[Number(candId)]) || {};
-
-        if (candData.first_name || candData.last_name) {
-          const mid = candData.middle_name ? `${candData.middle_name} ` : '';
-          candName = `${candData.first_name || ''} ${mid}${candData.last_name || ''}`.trim();
-        } else {
-          candName =
-            candData.candidateName ||
-            candData.name ||
-            appData.candidateName ||
-            appData.candidate_name ||
-            record.candidateName ||
-            (candId ? candId : 'Candidate unavailable');
-        }
-        candEmail = candData.email || appData.candidateEmail || record.candidateEmail || '';
-        candMobile = candData.mobile_no || candData.mobile || candData.phone || record.candidateMobile || '';
 
         jobOpeningId = String(
           appData.jobOpening ||
@@ -229,26 +207,42 @@ export const InterviewsPage = () => {
             record.jobOpeningId ||
             ''
         ).trim();
-        const jobData = jobsMap[jobOpeningId] || (jobOpeningId && jobsMap[Number(jobOpeningId)]) || {};
-        jobOpeningTitle =
-          jobData.jobTitle ||
-          jobData.title ||
-          jobData.job_title ||
-          appData.jobOpeningTitle ||
-          appData.job_title ||
-          record.jobOpeningTitle ||
-          (jobOpeningId ? jobOpeningId : 'Job Opening unavailable');
       } else {
+        currentStage = record.currentStage || record.current_stage || 'Not available';
+        applicationStatus = record.applicationStatus || record.application_status || 'Not available';
         candId = String(record.candidate || record.candidateId || '').trim();
-        const candData = candidatesMap[candId] || (candId && candidatesMap[Number(candId)]) || {};
-        candName = candData.candidateName || record.candidateName || (candId ? candId : 'Candidate unavailable');
-        candEmail = candData.email || record.candidateEmail || '';
-        candMobile = candData.mobile_no || candData.mobile || candData.phone || record.candidateMobile || '';
-
         jobOpeningId = String(record.jobOpening || record.jobOpeningId || record.job_opening || '').trim();
-        const jobData = jobsMap[jobOpeningId] || (jobOpeningId && jobsMap[Number(jobOpeningId)]) || {};
-        jobOpeningTitle = jobData.jobTitle || jobData.title || record.jobOpeningTitle || (jobOpeningId ? jobOpeningId : 'Job Opening unavailable');
       }
+
+      // Resolve candidate details
+      const candData = candidatesMap[candId] || (candId && candidatesMap[Number(candId)]) || {};
+      if (candData.first_name || candData.last_name) {
+        const mid = candData.middle_name ? `${candData.middle_name} ` : '';
+        candName = `${candData.first_name || ''} ${mid}${candData.last_name || ''}`.trim();
+      } else {
+        candName =
+          candData.candidateName ||
+          candData.name ||
+          (appData ? appData.candidateName || appData.candidate_name : null) ||
+          record.candidateName ||
+          record.candidate_name ||
+          (candId ? candId : 'Not available');
+      }
+      candEmail = candData.email || (appData ? appData.candidateEmail : null) || record.candidateEmail || '';
+      candMobile = candData.mobile_no || candData.mobile || candData.phone || record.candidateMobile || '';
+
+      // Resolve job opening details
+      const jobData = jobsMap[jobOpeningId] || (jobOpeningId && jobsMap[Number(jobOpeningId)]) || {};
+      jobOpeningTitle =
+        jobData.jobTitle ||
+        jobData.title ||
+        jobData.job_title ||
+        (appData ? appData.jobOpeningTitle || appData.job_title : null) ||
+        record.jobOpeningTitle ||
+        record.job_title ||
+        (jobOpeningId ? jobOpeningId : 'Not available');
+
+      const isStale = Boolean(appIdStr && !appData && candName === 'Not available' && jobOpeningTitle === 'Not available');
 
       return {
         ...record,
@@ -426,6 +420,62 @@ export const InterviewsPage = () => {
 
   const handleDeleteInterview = async (interviewId) => {
     await deleteInterview(interviewId);
+  };
+
+  const enrichUnscheduledApp = useCallback(
+    (item) => {
+      if (!item) return null;
+      const appId = String(item.job_application || item.jobApplication || item.id || item.name || '').trim();
+      const candId = String(item.candidate || item.candidateId || '').trim();
+      const jobOpeningId = String(item.job_opening || item.jobOpening || '').trim();
+
+      const candData = candidatesMap[candId] || (candId && candidatesMap[Number(candId)]) || {};
+      let candName = '';
+      if (candData.first_name || candData.last_name) {
+        const mid = candData.middle_name ? `${candData.middle_name} ` : '';
+        candName = `${candData.first_name || ''} ${mid}${candData.last_name || ''}`.trim();
+      } else {
+        candName = candData.candidateName || candData.name || (candId ? candId : 'Candidate');
+      }
+
+      const jobData = jobsMap[jobOpeningId] || (jobOpeningId && jobsMap[Number(jobOpeningId)]) || {};
+      const jobOpeningTitle = jobData.jobTitle || jobData.title || jobData.job_title || (jobOpeningId ? jobOpeningId : 'Job Opening');
+
+      return {
+        id: `unscheduled-${appId}`,
+        jobApplication: appId,
+        candidate: candId,
+        candidateName: candName,
+        jobOpening: jobOpeningId,
+        jobOpeningTitle: jobOpeningTitle,
+        currentStage: item.current_stage || 'Interview',
+        status: 'Not Scheduled',
+        isUnscheduled: true,
+        appliedOn: item.applied_on,
+      };
+    },
+    [candidatesMap, jobsMap]
+  );
+
+  const enrichedUnscheduledApps = Array.isArray(unscheduledItems)
+    ? unscheduledItems.map(enrichUnscheduledApp).filter(Boolean)
+    : [];
+
+  const filteredUnscheduledApps = enrichedUnscheduledApps.filter((item) => {
+    if (filters.status && filters.status !== 'Not Scheduled') return false;
+    if (searchInput && searchInput.trim() !== '') {
+      const term = searchInput.toLowerCase();
+      const appMatch = String(item.jobApplication).toLowerCase().includes(term);
+      const candMatch = String(item.candidateName).toLowerCase().includes(term);
+      const jobMatch = String(item.jobOpeningTitle).toLowerCase().includes(term);
+      return appMatch || candMatch || jobMatch;
+    }
+    return true;
+  });
+
+  const handleOpenScheduleModalWithApp = (jobAppId) => {
+    setEditingInterview({ jobApplication: jobAppId, job_application: jobAppId });
+    setModalOpen(true);
   };
 
   const enrichedInterviews = Array.isArray(interviews) ? interviews.map(enrichInterview) : [];
@@ -735,6 +785,113 @@ export const InterviewsPage = () => {
           )}
         </div>
       </Card>
+
+      {/* Applications Awaiting Interview Scheduling Section */}
+      {filteredUnscheduledApps.length > 0 && (
+        <Card
+          size="small"
+          style={{
+            marginBottom: '20px',
+            borderRadius: '8px',
+            borderColor: 'var(--brand-gold, #f59e0b)',
+            background: 'var(--bg-subtle, #fefce8)',
+          }}
+        >
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px', padding: '4px 8px' }}>
+            <Space align="center">
+              <FiClock style={{ color: '#d97706', fontSize: '1.2rem' }} />
+              <Title level={4} style={{ margin: 0, fontSize: '1rem', color: '#92400e' }}>
+                Applications Awaiting Interview Scheduling
+              </Title>
+              <Tag color="gold" style={{ fontWeight: 600 }}>
+                {filteredUnscheduledApps.length} Not Scheduled
+              </Tag>
+            </Space>
+            <Text type="secondary" style={{ fontSize: '0.8rem' }}>
+              Job Applications in 'Interview' stage without a scheduled interview
+            </Text>
+          </div>
+
+          <Table
+            size="small"
+            dataSource={filteredUnscheduledApps}
+            rowKey="id"
+            pagination={false}
+            columns={[
+              {
+                title: 'Job Application',
+                dataIndex: 'jobApplication',
+                key: 'jobApplication',
+                width: 150,
+                render: (appId) => (
+                  <Text strong copyable={{ text: appId }}>
+                    #{appId}
+                  </Text>
+                ),
+              },
+              {
+                title: 'Candidate',
+                key: 'candidate',
+                render: (_, record) => (
+                  <div>
+                    <Text strong style={{ display: 'block' }}>
+                      {record.candidateName}
+                    </Text>
+                    <Text type="secondary" style={{ fontSize: '0.75rem' }}>
+                      {record.candidate}
+                    </Text>
+                  </div>
+                ),
+              },
+              {
+                title: 'Job Opening',
+                key: 'jobOpening',
+                render: (_, record) => (
+                  <div>
+                    <Text strong style={{ display: 'block' }}>
+                      {record.jobOpeningTitle}
+                    </Text>
+                    <Text type="secondary" style={{ fontSize: '0.75rem' }}>
+                      {record.jobOpening}
+                    </Text>
+                  </div>
+                ),
+              },
+              {
+                title: 'App Stage',
+                dataIndex: 'currentStage',
+                key: 'currentStage',
+                width: 120,
+                render: (stage) => <Tag color="geekblue">{stage || 'Interview'}</Tag>,
+              },
+              {
+                title: 'Interview Status',
+                dataIndex: 'status',
+                key: 'status',
+                width: 130,
+                render: (status) => <Tag color="gold">{status || 'Not Scheduled'}</Tag>,
+              },
+              {
+                title: 'Action',
+                key: 'action',
+                width: 170,
+                align: 'right',
+                render: (_, record) => (
+                  <Button
+                    type="primary"
+                    size="small"
+                    icon={<FiCalendar />}
+                    onClick={() => handleOpenScheduleModalWithApp(record.jobApplication)}
+                    style={{ backgroundColor: 'var(--brand-teal, #008080)', borderColor: 'var(--brand-teal, #008080)' }}
+                  >
+                    Schedule Interview
+                  </Button>
+                ),
+              },
+            ]}
+          />
+        </Card>
+      )}
 
       {/* Main Table View */}
       <Card style={{ borderRadius: '8px' }}>

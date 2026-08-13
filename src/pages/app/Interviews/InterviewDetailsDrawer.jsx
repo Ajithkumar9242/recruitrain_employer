@@ -263,7 +263,7 @@ export const InterviewDetailsDrawer = ({
                       color: interview.isStale ? 'var(--text-secondary, #64748b)' : 'inherit',
                     }}
                   >
-                    {interview.resolvedCandidateName || 'Candidate unavailable'}
+                    {interview.resolvedCandidateName || 'Not available'}
                   </Text>
                 </Descriptions.Item>
                 <Descriptions.Item label="Candidate ID">
@@ -306,7 +306,7 @@ export const InterviewDetailsDrawer = ({
                       color: interview.isStale ? 'var(--text-secondary, #64748b)' : 'inherit',
                     }}
                   >
-                    {interview.resolvedJobOpeningTitle || 'Job Opening unavailable'}
+                    {interview.resolvedJobOpeningTitle || 'Not available'}
                   </Text>
                 </Descriptions.Item>
                 <Descriptions.Item label="Job Opening ID" span={2}>

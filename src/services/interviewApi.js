@@ -183,6 +183,16 @@ export const interviewApi = {
     });
     return response?.data || response?.message || response;
   },
+
+  /**
+   * List Job Applications in 'Interview' stage awaiting scheduling (no Interview record yet)
+   * @returns {Promise<Array>} List of unscheduled application objects
+   */
+  async listUnscheduledApplications() {
+    const response = await apiClient.post('/method/recruitrain_employer.api.interviews.list_unscheduled_applications', {});
+    const rawData = response?.data || response?.message?.data || response?.message || [];
+    return Array.isArray(rawData) ? rawData : [];
+  },
 };
 
 export default interviewApi;

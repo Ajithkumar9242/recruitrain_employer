@@ -3,6 +3,7 @@ import { interviewApi } from '../../services/interviewApi';
 
 const initialState = {
   items: [],
+  unscheduledItems: [],
   selectedInterview: null,
   loading: false,
   loadingDetails: false,
@@ -75,8 +76,16 @@ export const fetchInterviews = createAsyncThunk(
         });
       }
 
+      let unscheduled = [];
+      try {
+        unscheduled = await interviewApi.listUnscheduledApplications();
+      } catch (err) {
+        console.warn('Failed to fetch unscheduled interview applications:', err);
+      }
+
       return {
         result,
+        unscheduled,
         params: {
           page,
           pageSize,
@@ -205,9 +214,10 @@ const interviewSlice = createSlice({
         state.error = null;
       })
       .addCase(fetchInterviews.fulfilled, (state, action) => {
-        const { result, params } = action.payload;
+        const { result, unscheduled, params } = action.payload;
         state.loading = false;
         state.items = result.items;
+        state.unscheduledItems = unscheduled || [];
         state.pagination = {
           page: result.page,
           pageSize: result.pageSize,
@@ -318,6 +328,7 @@ export const {
 } = interviewSlice.actions;
 
 export const selectInterviewItems = (state) => state.interview.items;
+export const selectUnscheduledInterviews = (state) => state.interview.unscheduledItems;
 export const selectSelectedInterview = (state) => state.interview.selectedInterview;
 export const selectInterviewLoading = (state) => state.interview.loading;
 export const selectInterviewLoadingDetails = (state) => state.interview.loadingDetails;
