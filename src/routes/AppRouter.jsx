@@ -21,6 +21,7 @@ import OffersPage from '../pages/app/Offers/OffersPage';
 import NotificationsPage from '../pages/app/Notifications/NotificationsPage';
 import AnalyticsPage from '../pages/app/Analytics/AnalyticsPage';
 import CompanySettingsPage from '../pages/app/CompanySettings/CompanySettingsPage';
+import ProfilePage from '../pages/app/Profile/ProfilePage';
 import ModulePlaceholder from '../components/common/ModulePlaceholder';
 import FoundationDemo from '../components/foundation/FoundationDemo';
 
@@ -93,6 +94,7 @@ export const AppRouter = () => {
             />
             <Route path={ROUTES.SETTINGS} element={<CompanySettingsPage />} />
             <Route path={ROUTES.COMPANY_SETTINGS} element={<CompanySettingsPage />} />
+            <Route path={ROUTES.PROFILE} element={<ProfilePage />} />
           </Route>
 
           {/* Foundation Inspector (Phase 1 Demo) */}

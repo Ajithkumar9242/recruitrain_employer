@@ -14,6 +14,8 @@ import { useAuth } from '../hooks/useAuth';
 import { useSidebar } from '../hooks/useSidebar';
 import { useLanguage } from '../hooks/useLanguage';
 import { useNotifications } from '../hooks/useNotifications';
+import { useCompany } from '../hooks/useCompany';
+import { useProfile } from '../hooks/useProfile';
 import { ROUTES } from '../routes/routes';
 import Breadcrumbs from '../components/navigation/Breadcrumbs';
 import LanguageToggle from '../components/common/LanguageToggle';
@@ -28,6 +30,9 @@ export const Topbar = () => {
   const { toggleMobileDrawer } = useSidebar();
   const { t } = useLanguage();
   const { counts, fetchCounts } = useNotifications();
+
+  const { companyName } = useCompany();
+  const { profile } = useProfile();
 
   const [searchValue, setSearchValue] = useState('');
 
@@ -46,20 +51,21 @@ export const Topbar = () => {
     navigate(ROUTES.NOTIFICATIONS);
   };
 
+  const displayUserName = user?.fullName || user?.name || user?.email || 'Employer User';
+  const displayCompanyName =
+    companyName || profile?.company?.companyName || user?.companyName || user?.company || user?.company_name || null;
+
   const profileMenuItems = [
     {
       key: 'user-info',
       label: (
         <div style={{ padding: '4px 8px' }}>
           <Text strong style={{ display: 'block', color: 'var(--text-main)' }}>
-            {user?.fullName || user?.name || user?.email || 'Employer User'}
+            {displayUserName}
           </Text>
-          <Text type="secondary" style={{ fontSize: '0.75rem' }}>
-            {user?.email || ''}
-          </Text>
-          {user?.companyName || user?.company ? (
+          {displayCompanyName ? (
             <Text type="secondary" style={{ fontSize: '0.75rem', display: 'block', color: 'var(--brand-teal)' }}>
-              {user?.companyName || user?.company}
+              {displayCompanyName}
             </Text>
           ) : null}
         </div>
@@ -70,14 +76,14 @@ export const Topbar = () => {
     {
       key: 'profile',
       icon: <FiUser size={14} />,
-      label: t('shell.profilePlaceholder'),
-      onClick: () => message.info(t('shell.profilePlaceholder')),
+      label: t('profile.title', 'View Profile'),
+      onClick: () => navigate(ROUTES.PROFILE),
     },
     {
       key: 'settings',
       icon: <FiSettings size={14} />,
-      label: t('shell.settingsPlaceholder'),
-      onClick: () => message.info(t('shell.settingsPlaceholder')),
+      label: t('companySettings.title', 'Company Settings'),
+      onClick: () => navigate(ROUTES.COMPANY_SETTINGS),
     },
     { type: 'divider' },
     {

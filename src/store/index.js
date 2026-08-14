@@ -24,6 +24,7 @@ import offerReducer from './slices/offerSlice';
 import analyticsReducer from './slices/analyticsSlice';
 import companyReducer from './slices/companySlice';
 import settingsReducer from './slices/settingsSlice';
+import profileReducer from './slices/profileSlice';
 
 /**
  * Safely resolve Redux Persist storage adapter under Vite / ESM / CommonJS interop.
@@ -90,6 +91,7 @@ const rootReducer = combineReducers({
   analytics: analyticsReducer,
   company: companyReducer,
   settings: settingsReducer,
+  profile: profileReducer,
 });
 
 const persistConfig = {

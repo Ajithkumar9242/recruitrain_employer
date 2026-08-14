@@ -109,7 +109,7 @@ export const Sidebar = ({ isMobileDrawer = false, onItemClick }) => {
         </NavigationGroup>
 
         {/* TALENT GROUP */}
-        <NavigationGroup titleKey="nav.groupTalent" isCollapsed={collapsed}>
+        {/* <NavigationGroup titleKey="nav.groupTalent" isCollapsed={collapsed}>
           <NavItem
             to={ROUTES.TALENT_POOLS}
             labelKey="nav.talentPools"
@@ -117,7 +117,7 @@ export const Sidebar = ({ isMobileDrawer = false, onItemClick }) => {
             isCollapsed={collapsed}
             onClick={onItemClick}
           />
-        </NavigationGroup>
+        </NavigationGroup> */}
 
         {/* INSIGHTS GROUP */}
         <NavigationGroup titleKey="nav.groupInsights" isCollapsed={collapsed}>

@@ -1,4 +1,4 @@
-import { useCallback } from 'react';
+import { useCallback, useMemo } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import {
   fetchApplications,
@@ -41,6 +41,26 @@ export const useJobApplications = () => {
     actionStatus = null,
     error = null,
   } = appState;
+
+  const filteredItems = useMemo(() => {
+    if (!filters.currentStage) return items;
+    const targetStage = filters.currentStage.trim().toLowerCase();
+    return items.filter((app) => {
+      const appStage = (app.currentStage || app.stage || '').trim().toLowerCase();
+      return appStage === targetStage;
+    });
+  }, [items, filters.currentStage]);
+
+  const effectivePagination = useMemo(() => {
+    if (filters.currentStage) {
+      return {
+        ...pagination,
+        total: filteredItems.length,
+        totalPages: filteredItems.length > 0 ? Math.ceil(filteredItems.length / (pagination.pageSize || 20)) : 0,
+      };
+    }
+    return pagination;
+  }, [pagination, filteredItems.length, filters.currentStage]);
 
   const loadApplications = useCallback(
     (overrideParams = {}) => {
@@ -157,10 +177,10 @@ export const useJobApplications = () => {
   }, [dispatch]);
 
   return {
-    items,
-    applications: items,
+    items: filteredItems,
+    applications: filteredItems,
     selectedApplication,
-    pagination,
+    pagination: effectivePagination,
     filters,
     sorting,
     search,
