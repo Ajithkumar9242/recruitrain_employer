@@ -196,19 +196,23 @@ export const normalizeTimeToHire = (raw) => {
  * Backend keys: data (array), page, page_size, total, total_pages
  */
 export const normalizeRecentActivity = (raw) => {
-  const payload = extractPayload(raw) || {};
-  const items = Array.isArray(payload.data)
-    ? payload.data
+  if (!raw) return { items: [], pagination: { page: 1, pageSize: 10, total: 0, totalPages: 1 } };
+
+  // Unwrap Frappe envelope safely
+  const root = raw?.message && typeof raw.message === 'object' ? raw.message : raw;
+  const items = Array.isArray(root.data)
+    ? root.data
+    : Array.isArray(root)
+    ? root
     : Array.isArray(raw?.data)
     ? raw.data
-    : Array.isArray(raw)
-    ? raw
     : [];
 
-  const page = Number(payload.page ?? raw?.page ?? 1);
-  const pageSize = Number(payload.page_size ?? raw?.page_size ?? 10);
-  const total = Number(payload.total ?? raw?.total ?? items.length);
-  const totalPages = Math.ceil(total / (pageSize || 1)) || 1;
+  const page = Number(root.page ?? root?.meta?.page ?? raw?.page ?? 1);
+  const pageSize = Number(root.page_size ?? root.pageSize ?? root?.meta?.page_size ?? raw?.page_size ?? 10);
+  const total = Number(root.total ?? root?.meta?.total ?? raw?.total ?? items.length);
+  const calculatedTotalPages = Math.ceil(total / (pageSize || 1)) || 1;
+  const totalPages = Number(root.total_pages ?? root.totalPages ?? root?.meta?.total_pages ?? calculatedTotalPages);
 
   const normalizedItems = items.map((item) => ({
     doctype: String(item.doctype ?? ''),
