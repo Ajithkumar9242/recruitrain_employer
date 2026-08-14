@@ -1,6 +1,7 @@
 import { useCallback } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import {
+  fetchAnalytics as fetchAnalyticsThunk,
   fetchOverview as fetchOverviewThunk,
   fetchFunnel as fetchFunnelThunk,
   fetchTrends as fetchTrendsThunk,

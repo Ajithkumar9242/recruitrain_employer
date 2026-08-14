@@ -195,18 +195,28 @@ export const fetchRecentActivity = createAsyncThunk(
   }
 );
 
+export const fetchAnalytics = createAsyncThunk(
+  'analytics/fetchAnalytics',
+  async (_, { getState, rejectWithValue }) => {
+    try {
+      const { filters } = getState().analytics;
+      return await analyticsApi.getAnalytics({
+        jobOpening: filters.jobOpening,
+        fromDate: filters.fromDate,
+        toDate: filters.toDate,
+        granularity: filters.granularity,
+      });
+    } catch (err) {
+      return rejectWithValue(err.message || 'Failed to fetch analytics');
+    }
+  }
+);
+
 export const fetchAllAnalytics = createAsyncThunk(
   'analytics/fetchAllAnalytics',
   async (_, { dispatch }) => {
     await Promise.allSettled([
-      dispatch(fetchOverview()),
-      dispatch(fetchFunnel()),
-      dispatch(fetchTrends()),
-      dispatch(fetchJobMetrics()),
-      dispatch(fetchApplicationMetrics()),
-      dispatch(fetchInterviewMetrics()),
-      dispatch(fetchOfferMetrics()),
-      dispatch(fetchTimeToHire()),
+      dispatch(fetchAnalytics()),
       dispatch(fetchRecentActivity(1)),
     ]);
   }
@@ -246,6 +256,58 @@ const analyticsSlice = createSlice({
   },
   extraReducers: (builder) => {
     builder
+      // Full Analytics (get_analytics)
+      .addCase(fetchAnalytics.pending, (state) => {
+        state.loading.overview = true;
+        state.loading.funnel = true;
+        state.loading.trends = true;
+        state.loading.jobMetrics = true;
+        state.loading.applicationMetrics = true;
+        state.loading.interviewMetrics = true;
+        state.loading.offerMetrics = true;
+        state.loading.timeToHire = true;
+        state.errors.overview = null;
+        state.errors.funnel = null;
+        state.errors.trends = null;
+        state.errors.jobMetrics = null;
+        state.errors.applicationMetrics = null;
+        state.errors.interviewMetrics = null;
+        state.errors.offerMetrics = null;
+        state.errors.timeToHire = null;
+      })
+      .addCase(fetchAnalytics.fulfilled, (state, action) => {
+        state.loading.overview = false;
+        state.loading.funnel = false;
+        state.loading.trends = false;
+        state.loading.jobMetrics = false;
+        state.loading.applicationMetrics = false;
+        state.loading.interviewMetrics = false;
+        state.loading.offerMetrics = false;
+        state.loading.timeToHire = false;
+
+        if (action.payload) {
+          state.overview = action.payload.overview;
+          state.funnel = action.payload.funnel;
+          state.trends = action.payload.trends;
+          state.jobMetrics = action.payload.jobMetrics;
+          state.applicationMetrics = action.payload.applicationMetrics;
+          state.interviewMetrics = action.payload.interviewMetrics;
+          state.offerMetrics = action.payload.offerMetrics;
+          state.timeToHire = action.payload.timeToHire;
+        }
+      })
+      .addCase(fetchAnalytics.rejected, (state, action) => {
+        state.loading.overview = false;
+        state.loading.funnel = false;
+        state.loading.trends = false;
+        state.loading.jobMetrics = false;
+        state.loading.applicationMetrics = false;
+        state.loading.interviewMetrics = false;
+        state.loading.offerMetrics = false;
+        state.loading.timeToHire = false;
+        state.errors.overview = action.payload;
+      })
+
       // Overview
       .addCase(fetchOverview.pending, (state) => {
         state.loading.overview = true;

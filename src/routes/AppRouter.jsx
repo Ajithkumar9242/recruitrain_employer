@@ -22,6 +22,7 @@ import NotificationsPage from '../pages/app/Notifications/NotificationsPage';
 import AnalyticsPage from '../pages/app/Analytics/AnalyticsPage';
 import CompanySettingsPage from '../pages/app/CompanySettings/CompanySettingsPage';
 import ProfilePage from '../pages/app/Profile/ProfilePage';
+import BillingPage from '../pages/app/Billing/BillingPage';
 import ModulePlaceholder from '../components/common/ModulePlaceholder';
 import FoundationDemo from '../components/foundation/FoundationDemo';
 
@@ -88,10 +89,8 @@ export const AppRouter = () => {
               element={<ModulePlaceholder moduleNameKey="nav.talentPools" moduleNameFallback="Talent Pools" />}
             />
             <Route path={ROUTES.ANALYTICS} element={<AnalyticsPage />} />
-            <Route
-              path={ROUTES.BILLING}
-              element={<ModulePlaceholder moduleNameKey="nav.billing" moduleNameFallback="Billing" />}
-            />
+            <Route path="/app/analyticspage" element={<AnalyticsPage />} />
+            <Route path={ROUTES.BILLING} element={<BillingPage />} />
             <Route path={ROUTES.SETTINGS} element={<CompanySettingsPage />} />
             <Route path={ROUTES.COMPANY_SETTINGS} element={<CompanySettingsPage />} />
             <Route path={ROUTES.PROFILE} element={<ProfilePage />} />

@@ -9,6 +9,7 @@ import {
   normalizeOfferMetrics,
   normalizeTimeToHire,
   normalizeRecentActivity,
+  normalizeFullAnalytics,
 } from '../utils/analyticsNormalizer';
 
 /**
@@ -18,6 +19,21 @@ import {
  * Company scope is handled exclusively by backend session context.
  */
 export const analyticsApi = {
+  /**
+   * Fetch full analytics dataset from get_analytics endpoint
+   * GET /api/method/recruitrain_employer.api.analytics.get_analytics
+   * @param {Object} params - { jobOpening, fromDate, toDate, granularity }
+   * @returns {Promise<Object>} Full normalized analytics payload
+   */
+  async getAnalytics({ jobOpening = null, fromDate = null, toDate = null, granularity = 'monthly' } = {}) {
+    const params = { granularity };
+    if (jobOpening) params.job_opening = jobOpening;
+    if (fromDate) params.from_date = fromDate;
+    if (toDate) params.to_date = toDate;
+
+    const response = await apiClient.get('/method/recruitrain_employer.api.analytics.get_analytics', { params });
+    return normalizeFullAnalytics(response);
+  },
   /**
    * Fetch top-level KPI overview metrics
    * @param {Object} params - { fromDate, toDate }

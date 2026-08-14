@@ -228,3 +228,21 @@ export const normalizeRecentActivity = (raw) => {
     },
   };
 };
+
+/**
+ * Normalize full get_analytics response
+ * Backend keys: overview, funnel, trends, jobs, applications, interviews, offers, time_to_hire
+ */
+export const normalizeFullAnalytics = (raw) => {
+  const data = extractPayload(raw) || {};
+  return {
+    overview: normalizeOverview(data.overview),
+    funnel: normalizeFunnel(data.funnel),
+    trends: normalizeTrends(data.trends),
+    jobMetrics: normalizeJobMetrics(data.jobs),
+    applicationMetrics: normalizeApplicationMetrics(data.applications),
+    interviewMetrics: normalizeInterviewMetrics(data.interviews),
+    offerMetrics: normalizeOfferMetrics(data.offers),
+    timeToHire: normalizeTimeToHire(data.time_to_hire),
+  };
+};
